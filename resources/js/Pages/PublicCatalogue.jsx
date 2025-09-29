@@ -63,8 +63,8 @@ export default function PublicCatalogue({ products = [], filters = {} }) {
 
             <Head title="Product Catalog" />
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div className="py-6 sm:py-12">
+                <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
                     <div className="text-center mb-8">
                         <h2 className="text-3xl font-bold text-gray-900 mb-4">Welcome to Our Product Catalog</h2>
                         <p className="text-lg text-gray-600 mb-6">
@@ -75,7 +75,7 @@ export default function PublicCatalogue({ products = [], filters = {} }) {
                     {/* Search and Sort Controls */}
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                         <div className="p-6">
-                            <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 md:space-x-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 sm:space-x-4">
                                 {/* Search Bar */}
                                 <div className="flex-1">
                                     <input
@@ -88,11 +88,11 @@ export default function PublicCatalogue({ products = [], filters = {} }) {
                                 </div>
                                 
                                 {/* Sort Controls */}
-                                <div className="flex space-x-3">
+                                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                                     <select
                                         value={sortBy}
                                         onChange={(e) => handleSort(e.target.value, sortDirection)}
-                                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[140px]"
+                                        className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[140px]"
                                     >
                                         <option value="created_at">Date Added</option>
                                         <option value="name">Name</option>
@@ -104,7 +104,7 @@ export default function PublicCatalogue({ products = [], filters = {} }) {
                                         <select
                                             value={sortDirection}
                                             onChange={(e) => handleSort(sortBy, e.target.value)}
-                                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
+                                            className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
                                         >
                                             <option value="desc">High to Low</option>
                                             <option value="asc">Low to High</option>
@@ -115,7 +115,7 @@ export default function PublicCatalogue({ products = [], filters = {} }) {
                                         <select
                                             value={sortDirection}
                                             onChange={(e) => handleSort(sortBy, e.target.value)}
-                                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
+                                            className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
                                         >
                                             <option value="desc">Newest</option>
                                             <option value="asc">Oldest</option>
@@ -149,9 +149,9 @@ export default function PublicCatalogue({ products = [], filters = {} }) {
                             </div>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5 sm:gap-6">
                             {products.map((product) => (
-                                <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col h-full">
+                                <div key={product.id} className="bg-white rounded-md sm:rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col h-full">
                                     <Link 
                                         href={`/products/${product.id}`}
                                         className="flex flex-col h-full"
@@ -160,22 +160,24 @@ export default function PublicCatalogue({ products = [], filters = {} }) {
                                             <img
                                                 src={product.image_url}
                                                 alt={product.name}
-                                                className="w-full h-48 object-cover"
+                                                className="w-full h-36 sm:h-48 object-cover"
                                             />
                                         )}
-                                        <div className="p-4 flex flex-col flex-grow">
-                                            <h3 className="font-semibold text-lg text-gray-900 mb-2">{product.name}</h3>
-                                            {product.description && (
-                                                <p className="text-sm text-gray-600 mb-2 flex-grow">{product.description}</p>
-                                            )}
-                                            <div className="flex justify-between items-center mb-4">
-                                                <span className="text-2xl font-bold text-green-600">RM{product.price}</span>
-                                                <span className="text-sm text-gray-500">
+                                        <div className="p-1.5 sm:p-4 flex flex-col flex-grow">
+                                            <h3 className="font-semibold text-sm sm:text-lg text-gray-900 mb-1 sm:mb-2 overflow-hidden">{product.name}</h3>
+                                            <div className="flex-grow mb-1 sm:mb-2 min-h-[2rem] sm:min-h-[2.5rem]">
+                                                {product.description && (
+                                                    <p className="text-xs sm:text-sm text-gray-600 overflow-hidden">{product.description}</p>
+                                                )}
+                                            </div>
+                                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 sm:mb-4 space-y-1 sm:space-y-0">
+                                                <span className="text-lg sm:text-2xl font-bold text-green-600">RM{product.price}</span>
+                                                <span className="text-xs sm:text-sm text-gray-500">
                                                     {product.quantity > 0 ? `Qty: ${product.quantity}` : 'Out of Stock'}
                                                 </span>
                                             </div>
                                             <div className="mt-auto">
-                                                <div className="bg-blue-100 text-blue-600 text-center py-2 px-4 rounded hover:bg-blue-200 transition-colors">
+                                                <div className="bg-blue-100 text-blue-600 text-center py-1 sm:py-2 px-2 sm:px-4 rounded hover:bg-blue-200 transition-colors text-xs sm:text-sm">
                                                     View Details
                                                 </div>
                                             </div>

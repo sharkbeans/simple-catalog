@@ -1,50 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 
-export default function Catalogue({ auth }) {
-    const [products, setProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
+export default function Catalogue({ auth, products = [], filters = {} }) {
     const [error, setError] = useState(null);
     const [editingProduct, setEditingProduct] = useState(null);
     const [editData, setEditData] = useState({});
     const [editImageFile, setEditImageFile] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [sortBy, setSortBy] = useState('created_at');
-    const [sortDirection, setSortDirection] = useState('desc');
+    const [searchTerm, setSearchTerm] = useState(filters.search || '');
+    const [sortBy, setSortBy] = useState(filters.sort || 'created_at');
+    const [sortDirection, setSortDirection] = useState(filters.direction || 'desc');
 
-    useEffect(() => {
-        fetchProducts();
-    }, [sortBy, sortDirection]);
+    const handleSearch = (value) => {
+        setSearchTerm(value);
+        const params = {
+            search: value || undefined,
+            sort: sortBy,
+            direction: sortDirection
+        };
+        // Remove undefined values
+        Object.keys(params).forEach(key => params[key] === undefined && delete params[key]);
 
-    const fetchProducts = async () => {
-        setLoading(true);
-        try {
-            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            const params = new URLSearchParams();
-            if (searchTerm) params.append('search', searchTerm);
-            params.append('sort', sortBy);
-            params.append('direction', sortDirection);
-            
-            const response = await fetch(`/api/products?${params.toString()}`, {
-                headers: {
-                    'Authorization': `Bearer ${auth.token}`,
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': token
-                }
-            });
+        router.get('/catalogue', params, {
+            preserveState: true,
+            replace: true
+        });
+    };
 
-            if (response.ok) {
-                const data = await response.json();
-                setProducts(data);
-            } else {
-                setError('Failed to fetch products');
-            }
-        } catch (err) {
-            setError('An error occurred while fetching products');
-        } finally {
-            setLoading(false);
-        }
+    const handleSort = (newSortBy, newDirection) => {
+        setSortBy(newSortBy);
+        setSortDirection(newDirection);
+        const params = {
+            search: searchTerm || undefined,
+            sort: newSortBy,
+            direction: newDirection
+        };
+        // Remove undefined values
+        Object.keys(params).forEach(key => params[key] === undefined && delete params[key]);
+
+        router.get('/catalogue', params, {
+            preserveState: true,
+            replace: true
+        });
     };
 
     const deleteProduct = async (productId) => {
@@ -64,7 +61,8 @@ export default function Catalogue({ auth }) {
             });
 
             if (response.ok) {
-                setProducts(products.filter(product => product.id !== productId));
+                // Refresh the page to get updated product list
+                router.reload();
             } else {
                 setError('Failed to delete product');
             }
@@ -141,13 +139,11 @@ export default function Catalogue({ auth }) {
 
             console.log('Response status:', response.status);
             if (response.ok) {
-                const updatedProduct = await response.json();
-                setProducts(products.map(product => 
-                    product.id === productId ? updatedProduct : product
-                ));
                 setEditingProduct(null);
                 setEditData({});
                 setEditImageFile(null);
+                // Refresh the page to get updated product list
+                router.reload();
             } else {
                 setError('Failed to update product');
             }
@@ -168,27 +164,7 @@ export default function Catalogue({ auth }) {
         setEditImageFile(file);
     };
 
-    const handleSearch = () => {
-        fetchProducts();
-    };
 
-    if (loading) {
-        return (
-            <AuthenticatedLayout
-                user={auth.user}
-                header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Product Catalogue</h2>}
-            >
-                <Head title="Catalogue" />
-                <div className="py-12">
-                    <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                        <div className="flex justify-center">
-                            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-                        </div>
-                    </div>
-                </div>
-            </AuthenticatedLayout>
-        );
-    }
 
     return (
         <AuthenticatedLayout
@@ -207,8 +183,8 @@ export default function Catalogue({ auth }) {
         >
             <Head title="Catalogue" />
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div className="py-6 sm:py-12">
+                <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
                     {error && (
                         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                             {error}
@@ -218,42 +194,41 @@ export default function Catalogue({ auth }) {
                     {/* Search and Sort Controls */}
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                         <div className="p-6">
-                            <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 md:space-x-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 sm:space-x-4">
                                 {/* Search Bar */}
-                                <div className="flex-1 flex">
+                                <div className="flex-1 flex flex-col sm:flex-row">
                                     <input
                                         type="text"
                                         placeholder="Search products by name, price, or quantity..."
                                         value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                                        className="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-blue-500 focus:border-blue-500"
+                                        onChange={(e) => handleSearch(e.target.value)}
+                                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg sm:rounded-l-lg sm:rounded-r-none focus:ring-blue-500 focus:border-blue-500"
                                     />
                                     <button
-                                        onClick={handleSearch}
-                                        className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white border border-blue-500 rounded-r-lg focus:ring-blue-500 focus:border-blue-500"
+                                        onClick={() => handleSearch(searchTerm)}
+                                        className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white border border-blue-500 rounded-lg sm:rounded-l-none sm:rounded-r-lg focus:ring-blue-500 focus:border-blue-500 mt-2 sm:mt-0"
                                     >
                                         Search
                                     </button>
                                 </div>
                                 
                                 {/* Sort Controls */}
-                                <div className="flex space-x-3">
+                                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                                     <select
                                         value={sortBy}
-                                        onChange={(e) => setSortBy(e.target.value)}
-                                        className="w-40 px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                        onChange={(e) => handleSort(e.target.value, sortDirection)}
+                                        className="w-full sm:w-40 px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                                     >
                                         <option value="created_at">Date Added</option>
                                         <option value="name">Name</option>
                                         <option value="price">Price</option>
                                         <option value="quantity">Quantity</option>
                                     </select>
-                                    
+
                                     <select
                                         value={sortDirection}
-                                        onChange={(e) => setSortDirection(e.target.value)}
-                                        className="w-36 px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                        onChange={(e) => handleSort(sortBy, e.target.value)}
+                                        className="w-full sm:w-36 px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                                     >
                                         <option value="desc">High to Low</option>
                                         <option value="asc">Low to High</option>
@@ -280,7 +255,7 @@ export default function Catalogue({ auth }) {
                                         <h3 className="text-lg font-medium mb-4">No products found</h3>
                                         <p className="text-gray-600 mb-6">No products match your search "{searchTerm}". Try a different search term.</p>
                                         <button
-                                            onClick={() => setSearchTerm('')}
+                                            onClick={() => handleSearch('')}
                                             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-4"
                                         >
                                             Clear Search
@@ -301,17 +276,17 @@ export default function Catalogue({ auth }) {
                             </div>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5 sm:gap-6">
                             {products.map((product) => (
-                                <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full">
+                                <div key={product.id} className="bg-white rounded-md sm:rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full">
                                     {product.image_url && (
                                         <img
                                             src={product.image_url}
                                             alt={product.name}
-                                            className="w-full h-48 object-cover"
+                                            className="w-full h-36 sm:h-48 object-cover"
                                         />
                                     )}
-                                    <div className="p-4 flex flex-col flex-grow">
+                                    <div className="p-1.5 sm:p-4 flex flex-col flex-grow">
                                         {editingProduct === product.id ? (
                                             // Edit mode
                                             <div className="space-y-3 flex flex-col flex-grow">
@@ -369,16 +344,16 @@ export default function Catalogue({ auth }) {
                                                         </p>
                                                     )}
                                                 </div>
-                                                <div className="flex space-x-2 mt-auto">
+                                                <div className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2 mt-auto">
                                                     <button
                                                         onClick={() => saveEdit(product.id)}
-                                                        className="flex-1 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm"
+                                                        className="flex-1 bg-green-500 hover:bg-green-700 text-white font-bold py-1 sm:py-2 px-2 sm:px-4 rounded text-xs sm:text-sm"
                                                     >
                                                         Save
                                                     </button>
                                                     <button
                                                         onClick={cancelEdit}
-                                                        className="flex-1 bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded text-sm"
+                                                        className="flex-1 bg-gray-500 hover:bg-gray-700 text-white font-bold py-1 sm:py-2 px-2 sm:px-4 rounded text-xs sm:text-sm"
                                                     >
                                                         Cancel
                                                     </button>
@@ -387,24 +362,26 @@ export default function Catalogue({ auth }) {
                                         ) : (
                                             // View mode
                                             <div className="flex flex-col flex-grow">
-                                                <h3 className="font-semibold text-lg text-gray-900 mb-2">{product.name}</h3>
-                                                {product.description && (
-                                                    <p className="text-sm text-gray-600 mb-2 flex-grow">{product.description}</p>
-                                                )}
-                                                <div className="flex justify-between items-center mb-4">
-                                                    <span className="text-2xl font-bold text-green-600">RM{product.price}</span>
-                                                    <span className="text-sm text-gray-500">Qty: {product.quantity}</span>
+                                                <h3 className="font-semibold text-sm sm:text-lg text-gray-900 mb-1 sm:mb-2 overflow-hidden">{product.name}</h3>
+                                                <div className="flex-grow mb-1 sm:mb-2 min-h-[2rem] sm:min-h-[2.5rem]">
+                                                    {product.description && (
+                                                        <p className="text-xs sm:text-sm text-gray-600 overflow-hidden">{product.description}</p>
+                                                    )}
                                                 </div>
-                                                <div className="flex space-x-2 mt-auto">
+                                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 sm:mb-4 space-y-1 sm:space-y-0">
+                                                    <span className="text-lg sm:text-2xl font-bold text-green-600">RM{product.price}</span>
+                                                    <span className="text-xs sm:text-sm text-gray-500">Qty: {product.quantity}</span>
+                                                </div>
+                                                <div className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2 mt-auto">
                                                     <button
                                                         onClick={() => startEdit(product)}
-                                                        className="flex-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm"
+                                                        className="flex-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 sm:py-2 px-2 sm:px-4 rounded text-xs sm:text-sm"
                                                     >
                                                         Edit
                                                     </button>
                                                     <button
                                                         onClick={() => deleteProduct(product.id)}
-                                                        className="flex-1 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded text-sm"
+                                                        className="flex-1 bg-red-500 hover:bg-red-700 text-white font-bold py-1 sm:py-2 px-2 sm:px-4 rounded text-xs sm:text-sm"
                                                     >
                                                         Delete
                                                     </button>
