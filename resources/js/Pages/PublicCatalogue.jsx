@@ -149,7 +149,7 @@ export default function PublicCatalogue({ products = [], filters = {} }) {
                             </div>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5 sm:gap-6">
+                        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5 sm:gap-6">
                             {products.map((product) => (
                                 <div key={product.id} className="bg-white rounded-md sm:rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col h-full">
                                     <Link 
@@ -176,7 +176,7 @@ export default function PublicCatalogue({ products = [], filters = {} }) {
                                                     {product.quantity > 0 ? `Qty: ${product.quantity}` : 'Out of Stock'}
                                                 </span>
                                             </div>
-                                            <div className="mt-auto">
+                                            <div className="mt-auto hidden sm:block">
                                                 <div className="bg-blue-100 text-blue-600 text-center py-1 sm:py-2 px-2 sm:px-4 rounded hover:bg-blue-200 transition-colors text-xs sm:text-sm">
                                                     View Details
                                                 </div>

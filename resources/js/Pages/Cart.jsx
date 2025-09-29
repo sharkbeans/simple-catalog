@@ -185,7 +185,7 @@ export default function Cart() {
                                                     <div className="flex-1 min-w-0">
                                                         <h3 className="text-sm font-medium text-gray-900 leading-tight mb-1">{item.name}</h3>
                                                         <p className="text-xs text-gray-600 mb-1">ID: {item.id}</p>
-                                                        <p className="text-sm font-semibold text-green-600 mb-1">RM{item.price}</p>
+                                                        <p className="text-base font-semibold text-green-600 mb-1">RM{item.price}</p>
                                                         {item.maxStock && (
                                                             <p className="text-xs text-gray-500">Stock: {item.maxStock} available</p>
                                                         )}
@@ -303,7 +303,7 @@ export default function Cart() {
                                                     </div>
 
                                                     <div className="text-right ml-2">
-                                                        <p className="text-sm font-semibold mb-1">
+                                                        <p className="text-base font-semibold mb-1">
                                                             RM{(item.price * item.quantity).toFixed(2)}
                                                         </p>
                                                         <button
