@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
+import Sidebar from '@/Components/Sidebar';
 
 export default function Cart() {
     const [cartItems, setCartItems] = useState([]);
     const [total, setTotal] = useState(0);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     useEffect(() => {
         // Load cart from localStorage
@@ -107,10 +109,20 @@ export default function Cart() {
 
     return (
         <div className="min-h-screen bg-gray-100">
+            <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
             <nav className="border-b border-gray-100 bg-white">
                 <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
                     <div className="flex h-14 sm:h-16 justify-between items-center">
                         <div className="flex items-center min-w-0 flex-1">
+                            <button
+                                onClick={() => setSidebarOpen(true)}
+                                className="mr-2 sm:mr-4 text-gray-600 hover:text-gray-800 focus:outline-none"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                </svg>
+                            </button>
                             <Link href="/" className="flex-shrink-0">
                                 <ApplicationLogo className="block h-8 sm:h-9 w-auto fill-current text-gray-800" />
                             </Link>
@@ -120,7 +132,7 @@ export default function Cart() {
                         <div className="flex items-center ml-2">
                             <Link
                                 href="/public-catalog"
-                                className="text-gray-600 hover:text-gray-900 text-xs sm:text-sm lg:text-base px-2 sm:px-3 py-2 rounded-md transition-colors"
+                                className="text-gray-600 hover:text-gray-900 text-sm sm:text-sm lg:text-base px-2 sm:px-3 py-2 rounded-md transition-colors"
                             >
                                 <span className="hidden sm:inline">Back to Catalog</span>
                                 <span className="sm:hidden">Catalog</span>
@@ -164,8 +176,11 @@ export default function Cart() {
                                         <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 pr-2">Shopping Cart ({cartItems.length} items)</h2>
                                         <button
                                             onClick={clearCart}
-                                            className="bg-red-500 hover:bg-red-600 text-white font-medium px-3 sm:px-4 py-2 sm:py-2 rounded-lg transition-colors self-start sm:self-auto text-sm sm:text-base touch-manipulation"
+                                            className="bg-red-500 hover:bg-red-600 text-white font-medium px-3 sm:px-4 py-2 sm:py-2 rounded-lg transition-colors self-start sm:self-auto text-sm sm:text-base touch-manipulation ml-auto flex items-center"
                                         >
+                                            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
                                             Clear Cart
                                         </button>
                                     </div>

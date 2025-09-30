@@ -11,6 +11,7 @@ Route::get('/public-catalog', [App\Http\Controllers\PublicCatalogController::cla
 // Public product details and cart routes
 Route::get('/products/{product}', [App\Http\Controllers\PublicProductController::class, 'show'])->name('product.details');
 Route::get('/cart', [App\Http\Controllers\PublicProductController::class, 'cart'])->name('cart');
+Route::get('/contact', fn() => Inertia::render('Contact'))->name('contact');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', fn() => Inertia::render('Dashboard'))->name('dashboard');

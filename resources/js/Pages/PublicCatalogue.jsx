@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
+import Sidebar from '@/Components/Sidebar';
 
 export default function PublicCatalogue({ products = [], filters = {} }) {
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [sortBy, setSortBy] = useState(filters.sort || 'created_at');
     const [sortDirection, setSortDirection] = useState(filters.direction || 'desc');
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [itemsPerRow, setItemsPerRow] = useState(4); // Default 4 items per row
 
     const handleSearch = (value) => {
         setSearchTerm(value);
@@ -42,19 +45,33 @@ export default function PublicCatalogue({ products = [], filters = {} }) {
 
     return (
         <div className="min-h-screen bg-gray-100">
+            <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
             <nav className="border-b border-gray-100 bg-white">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex h-16 justify-between items-center">
                         <div className="flex items-center">
+                            <button
+                                onClick={() => setSidebarOpen(true)}
+                                className="mr-4 text-gray-600 hover:text-gray-800 focus:outline-none"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                </svg>
+                            </button>
                             <ApplicationLogo className="block h-9 w-auto fill-current text-gray-800" />
                             <h1 className="ml-4 text-xl font-semibold text-gray-900">Product Catalog</h1>
                         </div>
                         <div className="flex items-center">
-                            <Link 
+                            <Link
                                 href="/cart"
-                                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+                                className="bg-blue-500 hover:bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg flex items-center text-sm sm:text-base"
                             >
-                                🛒 View Cart
+                                <svg className="w-5 h-5 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                                <span className="hidden sm:inline ml-2">View Cart</span>
+                                <span className="sm:inline">Cart</span>
                             </Link>
                         </div>
                     </div>
@@ -80,7 +97,7 @@ export default function PublicCatalogue({ products = [], filters = {} }) {
                                 <div className="flex-1">
                                     <input
                                         type="text"
-                                        placeholder="Search products by name, price, or quantity..."
+                                        placeholder="Search by name, price, or quantity..."
                                         value={searchTerm}
                                         onChange={(e) => handleSearch(e.target.value)}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -99,7 +116,7 @@ export default function PublicCatalogue({ products = [], filters = {} }) {
                                         <option value="price">Price</option>
                                         <option value="quantity">Quantity</option>
                                     </select>
-                                    
+
                                     {sortBy === 'price' && (
                                         <select
                                             value={sortDirection}
@@ -110,7 +127,7 @@ export default function PublicCatalogue({ products = [], filters = {} }) {
                                             <option value="asc">Low to High</option>
                                         </select>
                                     )}
-                                    
+
                                     {sortBy !== 'price' && (
                                         <select
                                             value={sortDirection}
@@ -149,7 +166,13 @@ export default function PublicCatalogue({ products = [], filters = {} }) {
                             </div>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5 sm:gap-6">
+                        <div className={`grid gap-1.5 sm:gap-6 ${
+                            itemsPerRow === 2 ? 'grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2' :
+                            itemsPerRow === 3 ? 'grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3' :
+                            itemsPerRow === 4 ? 'grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4' :
+                            itemsPerRow === 5 ? 'grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5' :
+                            'grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6'
+                        }`}>
                             {products.map((product) => (
                                 <div key={product.id} className="bg-white rounded-md sm:rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col h-full">
                                     <Link 

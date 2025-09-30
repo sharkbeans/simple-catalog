@@ -2,6 +2,7 @@ import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
 import NavLink from '@/Components/NavLink';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
+import Sidebar from '@/Components/Sidebar';
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -10,13 +11,24 @@ export default function AuthenticatedLayout({ header, children }) {
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] =
         useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     return (
         <div className="min-h-screen bg-gray-100">
+            <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
             <nav className="border-b border-gray-100 bg-white">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex h-16 justify-between">
                         <div className="flex">
+                            <button
+                                onClick={() => setSidebarOpen(true)}
+                                className="mr-4 text-gray-600 hover:text-gray-800 focus:outline-none flex items-center"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                </svg>
+                            </button>
                             <div className="flex shrink-0 items-center">
                                 <Link href="/">
                                     <ApplicationLogo className="block h-9 w-auto fill-current text-gray-800" />

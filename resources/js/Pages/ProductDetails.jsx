@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
+import Sidebar from '@/Components/Sidebar';
 
 export default function ProductDetails({ product }) {
     const [quantity, setQuantity] = useState(1);
     const [addedToCart, setAddedToCart] = useState(false);
     const [cartQuantity, setCartQuantity] = useState(0);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     // Check current cart quantity on component mount
     React.useEffect(() => {
@@ -78,10 +80,20 @@ export default function ProductDetails({ product }) {
 
     return (
         <div className="min-h-screen bg-gray-100">
+            <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
             <nav className="border-b border-gray-100 bg-white">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex h-16 justify-between items-center">
                         <div className="flex items-center">
+                            <button
+                                onClick={() => setSidebarOpen(true)}
+                                className="mr-4 text-gray-600 hover:text-gray-800 focus:outline-none"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                </svg>
+                            </button>
                             <Link href="/">
                                 <ApplicationLogo className="block h-9 w-auto fill-current text-gray-800" />
                             </Link>
