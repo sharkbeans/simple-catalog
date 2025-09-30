@@ -19,15 +19,25 @@ export default function ProductDetails({ product }) {
     }, [product.id]);
 
     const addToCart = () => {
+        // Validate quantity before adding
+        const validQuantity = quantity === '' || quantity < 1 ? 1 : parseInt(quantity);
+        const maxAvailable = product.quantity - cartQuantity;
+        const finalQuantity = Math.min(validQuantity, maxAvailable);
+
+        // Update state if it was adjusted
+        if (finalQuantity !== quantity) {
+            setQuantity(finalQuantity);
+        }
+
         // Get existing cart from localStorage
         const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
-        
+
         // Check if product already exists in cart
         const existingItemIndex = existingCart.findIndex(item => item.id === product.id);
         const existingQuantity = existingItemIndex !== -1 ? existingCart[existingItemIndex].quantity : 0;
-        
+
         // Check if adding this quantity would exceed stock
-        const totalQuantity = existingQuantity + quantity;
+        const totalQuantity = existingQuantity + finalQuantity;
         if (totalQuantity > product.quantity) {
             alert(`Cannot add ${quantity} items. Only ${product.quantity - existingQuantity} more available (${existingQuantity} already in cart).`);
             return;
@@ -43,7 +53,7 @@ export default function ProductDetails({ product }) {
                 id: product.id,
                 name: product.name,
                 price: product.price,
-                quantity: quantity,
+                quantity: finalQuantity,
                 image_url: product.image_url,
                 maxStock: product.quantity // Store max stock for cart validation
             });
@@ -61,20 +71,51 @@ export default function ProductDetails({ product }) {
     };
 
     const orderViaWhatsApp = () => {
-        const message = `Product Order\n\nItem 1: ${product.name}\nQty: ${quantity}\nPrice: RM${(product.price * quantity).toFixed(2)}\n\nOrder Total: RM${(product.price * quantity).toFixed(2)}\nPlease provide an invoice. Thank you!`;
-        
+        // Validate quantity before ordering
+        const validQuantity = quantity === '' || quantity < 1 ? 1 : parseInt(quantity);
+        const maxAvailable = product.quantity - cartQuantity;
+        const finalQuantity = Math.min(validQuantity, maxAvailable);
+
+        // Update state if it was adjusted
+        if (finalQuantity !== quantity) {
+            setQuantity(finalQuantity);
+        }
+
+        const message = `Product Order\n\nItem 1: ${product.name}\nQty: ${finalQuantity}\nPrice: RM${(product.price * finalQuantity).toFixed(2)}\n\nOrder Total: RM${(product.price * finalQuantity).toFixed(2)}\nPlease provide an invoice. Thank you!`;
+
         const encodedMessage = encodeURIComponent(message);
         const phoneNumber = '+60124408720';
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-        
+
         window.open(whatsappUrl, '_blank');
     };
 
     const handleQuantityChange = (e) => {
-        const value = parseInt(e.target.value);
+        const value = e.target.value;
+
+        // Allow empty string (when user deletes all digits)
+        if (value === '') {
+            setQuantity('');
+            return;
+        }
+
+        const numValue = parseInt(value);
         const maxAvailable = product.quantity - cartQuantity;
-        if (value >= 1 && value <= maxAvailable) {
-            setQuantity(value);
+
+        // Allow any valid number input, will be validated on blur
+        if (!isNaN(numValue)) {
+            setQuantity(numValue);
+        }
+    };
+
+    const handleQuantityBlur = () => {
+        const maxAvailable = product.quantity - cartQuantity;
+
+        // If empty or invalid, reset to 1
+        if (quantity === '' || quantity < 1) {
+            setQuantity(1);
+        } else if (quantity > maxAvailable) {
+            setQuantity(maxAvailable);
         }
     };
 
@@ -186,6 +227,7 @@ export default function ProductDetails({ product }) {
                                                 <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-2">
                                                     Quantity
                                                 </label>
+                                                {/* Desktop: Number input */}
                                                 <input
                                                     type="number"
                                                     id="quantity"
@@ -193,8 +235,39 @@ export default function ProductDetails({ product }) {
                                                     max={product.quantity - cartQuantity}
                                                     value={quantity}
                                                     onChange={handleQuantityChange}
-                                                    className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                                    onBlur={handleQuantityBlur}
+                                                    className="hidden sm:block w-20 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                                                 />
+                                                {/* Mobile: +/- buttons with editable input */}
+                                                <div className="flex items-center space-x-3 sm:hidden">
+                                                    <button
+                                                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                                        className="w-10 h-10 flex items-center justify-center bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-lg transition-colors"
+                                                        disabled={quantity <= 1}
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                                                        </svg>
+                                                    </button>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        max={product.quantity - cartQuantity}
+                                                        value={quantity}
+                                                        onChange={handleQuantityChange}
+                                                        onBlur={handleQuantityBlur}
+                                                        className="w-16 text-xl font-semibold text-gray-900 text-center border border-gray-300 rounded-lg px-2 py-1 focus:ring-blue-500 focus:border-blue-500"
+                                                    />
+                                                    <button
+                                                        onClick={() => setQuantity(Math.min(product.quantity - cartQuantity, quantity + 1))}
+                                                        className="w-10 h-10 flex items-center justify-center bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-lg transition-colors"
+                                                        disabled={quantity >= product.quantity - cartQuantity}
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
                                             </div>
 
                                             <button
