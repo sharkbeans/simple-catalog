@@ -6,6 +6,8 @@ export default function AuditLogs({ logs }) {
     const [filterAction, setFilterAction] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedLogs, setExpandedLogs] = useState(new Set());
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     const toggleLogDetails = (logId) => {
         setExpandedLogs(prev => {
@@ -188,6 +190,17 @@ export default function AuditLogs({ logs }) {
         return matchesAction && matchesSearch;
     });
 
+    // Pagination calculations
+    const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
+
+    // Reset to page 1 when filters change
+    React.useEffect(() => {
+        setCurrentPage(1);
+    }, [filterAction, searchTerm]);
+
     return (
         <AuthenticatedLayout
             header={
@@ -233,106 +246,223 @@ export default function AuditLogs({ logs }) {
                             </div>
 
                             <div className="mt-4 text-sm text-gray-600">
-                                Showing {filteredLogs.length} of {logs.length} log entries
+                                Showing {startIndex + 1}-{Math.min(endIndex, filteredLogs.length)} of {filteredLogs.length} {filteredLogs.length !== logs.length && `(filtered from ${logs.length})`} log entries
                             </div>
                         </div>
                     </div>
 
-                    {/* Audit Logs */}
-                    <div className="space-y-4">
+                    {/* Audit Logs Table */}
+                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         {filteredLogs.length === 0 ? (
-                            <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                                <div className="p-12 text-center">
-                                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    <h3 className="mt-2 text-lg font-medium text-gray-900">No audit logs found</h3>
-                                    <p className="mt-1 text-gray-500">
-                                        {filterAction !== 'all' || searchTerm ? 'Try adjusting your filters' : 'Start making changes to see audit logs here'}
-                                    </p>
-                                </div>
+                            <div className="p-12 text-center">
+                                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <h3 className="mt-2 text-lg font-medium text-gray-900">No audit logs found</h3>
+                                <p className="mt-1 text-gray-500">
+                                    {filterAction !== 'all' || searchTerm ? 'Try adjusting your filters' : 'Start making changes to see audit logs here'}
+                                </p>
                             </div>
                         ) : (
-                            filteredLogs.map((log) => (
-                                <div key={log.id} className="bg-white overflow-hidden shadow-sm sm:rounded-lg hover:shadow-md transition-shadow group">
-                                    <div className="p-6">
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex items-start space-x-4 flex-1">
-                                                {/* Action Icon */}
-                                                <div className={`flex-shrink-0 p-2 rounded-lg border ${getActionColor(log.action)}`}>
-                                                    {getActionIcon(log.action)}
-                                                </div>
-
-                                                {/* Details */}
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-3 mb-2">
-                                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getActionColor(log.action)}`}>
-                                                            {log.action.toUpperCase()}
-                                                        </span>
-                                                        <h3 className="text-lg font-semibold text-gray-900 truncate">
-                                                            {log.product_name || 'Unknown Product'}
-                                                        </h3>
-                                                    </div>
-
-                                                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                                                        <div className="flex items-center">
-                                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                                            </svg>
-                                                            {log.user?.name || 'Unknown User'}
-                                                        </div>
-                                                        <div className="flex items-center">
-                                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                            </svg>
-                                                            {formatGMT8Time(log.created_at)} (GMT+8)
-                                                        </div>
-                                                        {log.product_id && (
+                            <>
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Date & Time
+                                                </th>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Action
+                                                </th>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Product
+                                                </th>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    User
+                                                </th>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Details
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {paginatedLogs.map((log) => (
+                                                <React.Fragment key={log.id}>
+                                                    <tr className="hover:bg-gray-50 transition-colors">
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                            {formatGMT8Time(log.created_at)}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
                                                             <div className="flex items-center">
-                                                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                                                </svg>
-                                                                Product ID: {log.product_id}
+                                                                <div className={`flex-shrink-0 p-1.5 rounded border ${getActionColor(log.action)}`}>
+                                                                    {getActionIcon(log.action)}
+                                                                </div>
+                                                                <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${getActionColor(log.action)}`}>
+                                                                    {log.action.toUpperCase()}
+                                                                </span>
                                                             </div>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Changes - Collapsed by default */}
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="text-sm font-medium text-gray-900">
+                                                                {log.product_name || 'Unknown Product'}
+                                                            </div>
+                                                            {log.product_id && (
+                                                                <div className="text-xs text-gray-500">
+                                                                    ID: {log.product_id}
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="text-sm text-gray-900">
+                                                                {log.user?.name || 'Unknown User'}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                            <button
+                                                                onClick={() => toggleLogDetails(log.id)}
+                                                                className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                                                            >
+                                                                {expandedLogs.has(log.id) ? (
+                                                                    <>
+                                                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                                                        </svg>
+                                                                        Hide
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                                        </svg>
+                                                                        View
+                                                                    </>
+                                                                )}
+                                                            </button>
+                                                        </td>
+                                                    </tr>
                                                     {expandedLogs.has(log.id) && (
-                                                        <div className="mt-4 pt-4 border-t border-gray-200">
-                                                            {renderChanges(log)}
-                                                        </div>
+                                                        <tr>
+                                                            <td colSpan="5" className="px-6 py-4 bg-gray-50">
+                                                                {renderChanges(log)}
+                                                            </td>
+                                                        </tr>
                                                     )}
-                                                </div>
-                                            </div>
+                                                </React.Fragment>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
 
-                                            {/* View Details Button - Only visible on hover or when expanded */}
-                                            <div className={`flex-shrink-0 ml-4 transition-opacity duration-200 ${expandedLogs.has(log.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                                <button
-                                                    onClick={() => toggleLogDetails(log.id)}
-                                                    className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                                                >
-                                                    {expandedLogs.has(log.id) ? (
-                                                        <>
-                                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                                            </svg>
-                                                            Hide Details
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                            </svg>
-                                                            View Details
-                                                        </>
-                                                    )}
-                                                </button>
+                                {/* Pagination */}
+                                {totalPages > 1 && (
+                                    <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                                        <div className="flex-1 flex justify-between sm:hidden">
+                                            <button
+                                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                                disabled={currentPage === 1}
+                                                className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                                                    currentPage === 1
+                                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                        : 'bg-white text-gray-700 hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                Previous
+                                            </button>
+                                            <button
+                                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                                disabled={currentPage === totalPages}
+                                                className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                                                    currentPage === totalPages
+                                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                        : 'bg-white text-gray-700 hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
+                                        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                            <div>
+                                                <p className="text-sm text-gray-700">
+                                                    Page <span className="font-medium">{currentPage}</span> of{' '}
+                                                    <span className="font-medium">{totalPages}</span>
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                                    <button
+                                                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                                        disabled={currentPage === 1}
+                                                        className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 text-sm font-medium ${
+                                                            currentPage === 1
+                                                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                                : 'bg-white text-gray-500 hover:bg-gray-50'
+                                                        }`}
+                                                    >
+                                                        <span className="sr-only">Previous</span>
+                                                        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                        </svg>
+                                                    </button>
+
+                                                    {/* Page numbers */}
+                                                    {[...Array(totalPages)].map((_, idx) => {
+                                                        const pageNumber = idx + 1;
+                                                        // Show first page, last page, current page, and pages around current
+                                                        if (
+                                                            pageNumber === 1 ||
+                                                            pageNumber === totalPages ||
+                                                            (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                                                        ) {
+                                                            return (
+                                                                <button
+                                                                    key={pageNumber}
+                                                                    onClick={() => setCurrentPage(pageNumber)}
+                                                                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                                                        currentPage === pageNumber
+                                                                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                                                                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                                                    }`}
+                                                                >
+                                                                    {pageNumber}
+                                                                </button>
+                                                            );
+                                                        } else if (
+                                                            pageNumber === currentPage - 2 ||
+                                                            pageNumber === currentPage + 2
+                                                        ) {
+                                                            return (
+                                                                <span
+                                                                    key={pageNumber}
+                                                                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
+                                                                >
+                                                                    ...
+                                                                </span>
+                                                            );
+                                                        }
+                                                        return null;
+                                                    })}
+
+                                                    <button
+                                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                                        disabled={currentPage === totalPages}
+                                                        className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 text-sm font-medium ${
+                                                            currentPage === totalPages
+                                                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                                : 'bg-white text-gray-500 hover:bg-gray-50'
+                                                        }`}
+                                                    >
+                                                        <span className="sr-only">Next</span>
+                                                        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                                                        </svg>
+                                                    </button>
+                                                </nav>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))
+                                )}
+                            </>
                         )}
                     </div>
                 </div>
