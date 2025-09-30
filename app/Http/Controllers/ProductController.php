@@ -16,8 +16,8 @@ class ProductController extends Controller
      */
     public function publicIndex(Request $request): JsonResponse
     {
-        $query = Product::query();
-        
+        $query = Product::query()->where('is_hidden', false);
+
         // Search functionality
         if ($request->has('search') && $request->search) {
             $searchTerm = $request->search;
@@ -27,20 +27,20 @@ class ProductController extends Controller
                   ->orWhere('quantity', 'like', '%' . $searchTerm . '%');
             });
         }
-        
+
         // Sorting functionality
         $sortBy = $request->get('sort', 'created_at');
         $sortDirection = $request->get('direction', 'desc');
-        
+
         $allowedSorts = ['created_at', 'price', 'quantity', 'name'];
         if (!in_array($sortBy, $allowedSorts)) {
             $sortBy = 'created_at';
         }
-        
+
         if (!in_array($sortDirection, ['asc', 'desc'])) {
             $sortDirection = 'desc';
         }
-        
+
         $products = $query->orderBy($sortBy, $sortDirection)->get();
         return response()->json($products);
     }
@@ -306,6 +306,28 @@ class ProductController extends Controller
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         }
+    }
+
+    /**
+     * Toggle product visibility.
+     */
+    public function toggleVisibility(Product $product): JsonResponse
+    {
+        $oldValue = $product->is_hidden;
+        $product->is_hidden = !$product->is_hidden;
+        $product->save();
+
+        // Log the visibility change
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'product_id' => $product->id,
+            'action' => $product->is_hidden ? 'hidden' : 'shown',
+            'product_name' => $product->name,
+            'old_values' => ['is_hidden' => $oldValue],
+            'new_values' => ['is_hidden' => $product->is_hidden],
+        ]);
+
+        return response()->json($product);
     }
 
     /**

@@ -10,8 +10,8 @@ class PublicCatalogController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::query();
-        
+        $query = Product::query()->where('is_hidden', false);
+
         // Search functionality
         if ($request->has('search') && $request->search) {
             $searchTerm = $request->search;
@@ -21,22 +21,22 @@ class PublicCatalogController extends Controller
                   ->orWhere('quantity', 'like', '%' . $searchTerm . '%');
             });
         }
-        
+
         // Sorting functionality
         $sortBy = $request->get('sort', 'created_at');
         $sortDirection = $request->get('direction', 'desc');
-        
+
         $allowedSorts = ['created_at', 'price', 'quantity', 'name'];
         if (!in_array($sortBy, $allowedSorts)) {
             $sortBy = 'created_at';
         }
-        
+
         if (!in_array($sortDirection, ['asc', 'desc'])) {
             $sortDirection = 'desc';
         }
-        
+
         $products = $query->orderBy($sortBy, $sortDirection)->get();
-        
+
         return Inertia::render('PublicCatalogue', [
             'products' => $products,
             'filters' => [

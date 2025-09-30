@@ -10,7 +10,7 @@ class AdminCatalogController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::query();
+        $query = Product::query()->where('is_hidden', false);
 
         // Search functionality
         if ($request->has('search') && $request->search) {

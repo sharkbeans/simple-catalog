@@ -25,6 +25,9 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
     const [sortBy, setSortBy] = useState('created_at');
     const [sortDirection, setSortDirection] = useState('desc');
     const [lastEditTime, setLastEditTime] = useState(initialLastEditTime ? new Date(initialLastEditTime) : null);
+    const [showLowStock, setShowLowStock] = useState(false);
+    const [showNoStock, setShowNoStock] = useState(false);
+    const [showHiddenStock, setShowHiddenStock] = useState(false);
 
     const formatGMT8Time = (date) => {
         const options = {
@@ -138,6 +141,34 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
             }
         } catch (err) {
             setError('An error occurred while updating the product');
+        }
+    };
+
+    const toggleVisibility = async (productId) => {
+        try {
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            const response = await fetch(`/api/products/${productId}/toggle-visibility`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${auth.token}`,
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token
+                }
+            });
+
+            if (response.ok) {
+                const updatedProduct = await response.json();
+                setProducts(products.map(p =>
+                    p.id === productId ? updatedProduct : p
+                ));
+                setLastEditTime(new Date(updatedProduct.updated_at));
+                setSuccess(`Product ${updatedProduct.is_hidden ? 'hidden from' : 'shown in'} catalog!`);
+                setTimeout(() => setSuccess(''), 3000);
+            } else {
+                setError('Failed to toggle product visibility');
+            }
+        } catch (err) {
+            setError('An error occurred while toggling product visibility');
         }
     };
 
@@ -455,11 +486,53 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
                                 
                                 {/* Results Summary */}
                                 <div className="mt-4 text-sm text-gray-600">
-                                    {searchTerm ? (
-                                        <span>Found {products.length} product(s) matching "{searchTerm}"</span>
-                                    ) : (
-                                        <span>Showing {products.length} product(s)</span>
-                                    )}
+                                    {(() => {
+                                        const filteredCount = products.filter(product => {
+                                            if (showLowStock && product.quantity > 10) return false;
+                                            if (showNoStock && product.quantity !== 0) return false;
+                                            if (showHiddenStock && !product.is_hidden) return false;
+                                            return true;
+                                        }).length;
+
+                                        if (searchTerm) {
+                                            return <span>Found {filteredCount} of {products.length} product(s) matching "{searchTerm}"</span>;
+                                        } else if (showLowStock || showNoStock || showHiddenStock) {
+                                            return <span>Showing {filteredCount} of {products.length} product(s)</span>;
+                                        } else {
+                                            return <span>Showing {products.length} product(s)</span>;
+                                        }
+                                    })()}
+                                </div>
+
+                                {/* Filter Checkboxes */}
+                                <div className="mt-4 flex flex-wrap gap-4">
+                                    <label className="flex items-center space-x-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={showLowStock}
+                                            onChange={(e) => setShowLowStock(e.target.checked)}
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                        />
+                                        <span className="text-sm text-gray-700">Show Low Stock (≤10)</span>
+                                    </label>
+                                    <label className="flex items-center space-x-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={showNoStock}
+                                            onChange={(e) => setShowNoStock(e.target.checked)}
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                        />
+                                        <span className="text-sm text-gray-700">Show No Stock (0)</span>
+                                    </label>
+                                    <label className="flex items-center space-x-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={showHiddenStock}
+                                            onChange={(e) => setShowHiddenStock(e.target.checked)}
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                        />
+                                        <span className="text-sm text-gray-700">Show Hidden Products</span>
+                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -488,18 +561,33 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
                                 </Link>
                             )}
                             
-                            {products.length === 0 ? (
-                                <div className="text-center py-8">
-                                    <h3 className="text-lg font-medium mb-4">No products found</h3>
-                                    <p className="text-gray-600 mb-6">Start building your product catalog by adding your first product.</p>
-                                    <button
-                                        onClick={() => setShowAddForm(true)}
-                                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg"
-                                    >
-                                        Add Your First Product
-                                    </button>
-                                </div>
-                            ) : (
+                            {(() => {
+                                // Apply filters
+                                const filteredProducts = products.filter(product => {
+                                    if (showLowStock && product.quantity > 10) return false;
+                                    if (showNoStock && product.quantity !== 0) return false;
+                                    if (showHiddenStock && !product.is_hidden) return false;
+                                    return true;
+                                });
+
+                                return filteredProducts.length === 0 ? (
+                                    <div className="text-center py-8">
+                                        <h3 className="text-lg font-medium mb-4">No products found</h3>
+                                        <p className="text-gray-600 mb-6">
+                                            {products.length === 0
+                                                ? 'Start building your product catalog by adding your first product.'
+                                                : 'No products match the selected filters.'}
+                                        </p>
+                                        {products.length === 0 && (
+                                            <button
+                                                onClick={() => setShowAddForm(true)}
+                                                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg"
+                                            >
+                                                Add Your First Product
+                                            </button>
+                                        )}
+                                    </div>
+                                ) : (
                                 <div className="overflow-x-auto">
                                     <table className="min-w-full table-auto">
                                         <thead>
@@ -514,8 +602,8 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
-                                            {products.map((product) => (
-                                                <tr key={product.id} className="hover:bg-gray-50">
+                                            {filteredProducts.map((product) => (
+                                                <tr key={product.id} className={`hover:bg-gray-50 ${product.is_hidden ? 'bg-gray-100' : ''}`}>
                                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                                                         {product.id}
                                                     </td>
@@ -640,16 +728,39 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
                                                         ) : (
                                                             <div className="flex space-x-2">
                                                                 <button
-                                                                    onClick={() => startEdit(product.id)}
-                                                                    className="text-indigo-600 hover:text-indigo-900"
+                                                                    onClick={() => toggleVisibility(product.id)}
+                                                                    className={`p-2 text-white rounded ${product.is_hidden ? 'bg-gray-500 hover:bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'}`}
+                                                                    title={product.is_hidden ? 'Show in catalog' : 'Hide from catalog'}
                                                                 >
-                                                                    Edit
+                                                                    {product.is_hidden ? (
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                                            <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
+                                                                            <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                                                                        </svg>
+                                                                    ) : (
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                                                            <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                                                                        </svg>
+                                                                    )}
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => startEdit(product.id)}
+                                                                    className="p-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded"
+                                                                    title="Edit"
+                                                                >
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                                                    </svg>
                                                                 </button>
                                                                 <button
                                                                     onClick={() => deleteProduct(product.id)}
-                                                                    className="text-red-600 hover:text-red-900"
+                                                                    className="p-2 text-white bg-red-600 hover:bg-red-700 rounded"
+                                                                    title="Delete"
                                                                 >
-                                                                    Delete
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                                    </svg>
                                                                 </button>
                                                             </div>
                                                         )}
@@ -659,7 +770,8 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
                                         </tbody>
                                     </table>
                                 </div>
-                            )}
+                                );
+                            })()}
                         </div>
                     </div>
                 </div>

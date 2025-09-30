@@ -13,6 +13,11 @@ class PublicProductController extends Controller
      */
     public function show(Product $product)
     {
+        // Prevent access to hidden products
+        if ($product->is_hidden) {
+            abort(404);
+        }
+
         return Inertia::render('ProductDetails', [
             'product' => $product
         ]);

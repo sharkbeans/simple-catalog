@@ -13,7 +13,10 @@ Route::get('/user', function (Request $request) {
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('products', ProductController::class);
-    
+
     // Separate route for updating products with images
     Route::post('products/{product}/update-with-image', [ProductController::class, 'updateWithImage']);
+
+    // Toggle product visibility
+    Route::patch('products/{product}/toggle-visibility', [ProductController::class, 'toggleVisibility']);
 });
