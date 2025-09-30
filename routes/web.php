@@ -33,12 +33,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/catalogue', [App\Http\Controllers\AdminCatalogController::class, 'index'])->name('catalogue');
 
+    Route::get('/audit-logs', function () {
+        $logs = \App\Models\AuditLog::with(['user', 'product'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return Inertia::render('AuditLogs', [
+            'logs' => $logs,
+        ]);
+    })->name('audit.logs');
+
     Route::get('/spreadsheet', function () {
+        $latestProduct = \App\Models\Product::latest('updated_at')->first();
+
         return Inertia::render('Spreadsheet', [
             'auth' => [
                 'user' => auth()->user(),
                 'token' => auth()->user()->createToken('auth-token')->plainTextToken
-            ]
+            ],
+            'lastEditTime' => $latestProduct ? $latestProduct->updated_at->toIso8601String() : null,
         ]);
     })->name('spreadsheet');
 });

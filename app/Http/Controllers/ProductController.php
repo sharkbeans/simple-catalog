@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
@@ -110,6 +111,16 @@ class ProductController extends Controller
             ];
 
             $product = Product::create($productData);
+
+            // Log the creation
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'product_id' => $product->id,
+                'action' => 'created',
+                'product_name' => $product->name,
+                'new_values' => $productData,
+            ]);
+
             return response()->json($product, 201);
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
@@ -172,7 +183,39 @@ class ProductController extends Controller
                 \Log::info('No image file in request');
             }
 
+            // Store old values before update
+            $oldValues = $product->only(array_keys($updateData));
+
             $product->update($updateData);
+
+            // Check if there are actual changes
+            $hasChanges = false;
+            foreach ($updateData as $key => $newValue) {
+                $oldValue = $oldValues[$key] ?? null;
+                // Compare values, handle numeric comparisons properly
+                if (is_numeric($oldValue) && is_numeric($newValue)) {
+                    if ((float)$oldValue != (float)$newValue) {
+                        $hasChanges = true;
+                        break;
+                    }
+                } else if ($oldValue != $newValue) {
+                    $hasChanges = true;
+                    break;
+                }
+            }
+
+            // Only log if there are actual changes
+            if ($hasChanges) {
+                AuditLog::create([
+                    'user_id' => auth()->id(),
+                    'product_id' => $product->id,
+                    'action' => 'updated',
+                    'product_name' => $product->name,
+                    'old_values' => $oldValues,
+                    'new_values' => $updateData,
+                ]);
+            }
+
             return response()->json($product->fresh());
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
@@ -226,7 +269,39 @@ class ProductController extends Controller
                 \Log::info('No image file in updateWithImage request');
             }
 
+            // Store old values before update
+            $oldValues = $product->only(array_keys($updateData));
+
             $product->update($updateData);
+
+            // Check if there are actual changes
+            $hasChanges = false;
+            foreach ($updateData as $key => $newValue) {
+                $oldValue = $oldValues[$key] ?? null;
+                // Compare values, handle numeric comparisons properly
+                if (is_numeric($oldValue) && is_numeric($newValue)) {
+                    if ((float)$oldValue != (float)$newValue) {
+                        $hasChanges = true;
+                        break;
+                    }
+                } else if ($oldValue != $newValue) {
+                    $hasChanges = true;
+                    break;
+                }
+            }
+
+            // Only log if there are actual changes
+            if ($hasChanges) {
+                AuditLog::create([
+                    'user_id' => auth()->id(),
+                    'product_id' => $product->id,
+                    'action' => 'updated',
+                    'product_name' => $product->name,
+                    'old_values' => $oldValues,
+                    'new_values' => $updateData,
+                ]);
+            }
+
             return response()->json($product->fresh());
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
@@ -238,12 +313,24 @@ class ProductController extends Controller
      */
     public function destroy(Product $product): JsonResponse
     {
+        // Store product data before deletion
+        $productData = $product->only(['name', 'price', 'quantity', 'description']);
+
         // Delete associated image file if it exists
         if ($product->image_url) {
             $imagePath = str_replace('/storage/', '', $product->image_url);
             Storage::disk('public')->delete($imagePath);
         }
-        
+
+        // Log the deletion before deleting the product
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'product_id' => $product->id,
+            'action' => 'deleted',
+            'product_name' => $product->name,
+            'old_values' => $productData,
+        ]);
+
         $product->delete();
         return response()->json(null, 204);
     }

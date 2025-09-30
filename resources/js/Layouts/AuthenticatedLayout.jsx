@@ -55,6 +55,12 @@ export default function AuthenticatedLayout({ header, children }) {
                                     Manage Products
                                 </NavLink>
                                 <NavLink
+                                    href={route('audit.logs')}
+                                    active={route().current('audit.logs')}
+                                >
+                                    Audit Logs
+                                </NavLink>
+                                <NavLink
                                     href="/"
                                     className="text-blue-600 hover:text-blue-800"
                                 >
@@ -175,6 +181,12 @@ export default function AuthenticatedLayout({ header, children }) {
                             active={route().current('spreadsheet')}
                         >
                             Manage Products
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            href={route('audit.logs')}
+                            active={route().current('audit.logs')}
+                        >
+                            Audit Logs
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
                             href="/"

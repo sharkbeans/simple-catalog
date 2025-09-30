@@ -4,7 +4,7 @@ import { Head, Link } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 
-export default function Spreadsheet({ auth }) {
+export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime }) {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -24,6 +24,21 @@ export default function Spreadsheet({ auth }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState('created_at');
     const [sortDirection, setSortDirection] = useState('desc');
+    const [lastEditTime, setLastEditTime] = useState(initialLastEditTime ? new Date(initialLastEditTime) : null);
+
+    const formatGMT8Time = (date) => {
+        const options = {
+            timeZone: 'Asia/Singapore', // GMT+8
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        };
+        return new Intl.DateTimeFormat('en-GB', options).format(date);
+    };
 
     useEffect(() => {
         fetchProducts();
@@ -101,7 +116,7 @@ export default function Spreadsheet({ auth }) {
 
             if (response.ok) {
                 const updatedProduct = await response.json();
-                setProducts(products.map(p => 
+                setProducts(products.map(p =>
                     p.id === productId ? updatedProduct : p
                 ));
                 setEditingRows(prev => {
@@ -115,6 +130,7 @@ export default function Spreadsheet({ auth }) {
                     delete newImages[productId];
                     return newImages;
                 });
+                setLastEditTime(new Date(updatedProduct.updated_at));
                 setSuccess('Product updated successfully!');
                 setTimeout(() => setSuccess(''), 3000);
             } else {
@@ -142,7 +158,14 @@ export default function Spreadsheet({ auth }) {
             });
 
             if (response.ok) {
-                setProducts(products.filter(product => product.id !== productId));
+                const remainingProducts = products.filter(product => product.id !== productId);
+                setProducts(remainingProducts);
+                // Find the most recently updated product from remaining products
+                const mostRecent = remainingProducts.reduce((latest, product) => {
+                    const productDate = new Date(product.updated_at);
+                    return !latest || productDate > latest ? productDate : latest;
+                }, null);
+                setLastEditTime(mostRecent);
                 setSuccess('Product deleted successfully!');
                 setTimeout(() => setSuccess(''), 3000);
             } else {
@@ -227,6 +250,7 @@ export default function Spreadsheet({ auth }) {
                 setNewProduct({ name: '', description: '', price: '', quantity: '', image_url: '' });
                 setNewProductImage(null);
                 setShowAddForm(false);
+                setLastEditTime(new Date(result.updated_at));
                 setSuccess('Product added successfully!');
                 setTimeout(() => setSuccess(''), 3000);
             } else {
@@ -445,7 +469,7 @@ export default function Spreadsheet({ auth }) {
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6">
                             {/* Header with Add Product Button */}
-                            <div className="flex justify-between items-center mb-6">
+                            <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-lg font-medium text-gray-900">Products</h3>
                                 <button
                                     onClick={() => setShowAddForm(!showAddForm)}
@@ -454,6 +478,13 @@ export default function Spreadsheet({ auth }) {
                                     {showAddForm ? 'Cancel' : 'Add Product'}
                                 </button>
                             </div>
+
+                            {/* Last Edit Timestamp */}
+                            {lastEditTime && (
+                                <div className="mb-4 text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-lg border border-gray-200">
+                                    <span className="font-medium">Last edit:</span> {formatGMT8Time(lastEditTime)}
+                                </div>
+                            )}
                             
                             {products.length === 0 ? (
                                 <div className="text-center py-8">
