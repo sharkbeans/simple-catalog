@@ -165,19 +165,19 @@ class ProductController extends Controller
 
             if ($request->hasFile('image')) {
                 \Log::info('Image file detected, processing upload');
-                
+
                 // Delete old image if it exists
                 if ($product->image_url) {
                     $oldImagePath = str_replace('/storage/', '', $product->image_url);
                     Storage::disk('public')->delete($oldImagePath);
                 }
-                
+
                 // Upload new image using storeAs method with proper disk
                 $file = $request->file('image');
                 $fileName = time() . '_' . $file->getClientOriginalName();
                 $filePath = $file->storeAs('products', $fileName, 'public');
                 $updateData['image_url'] = '/storage/' . $filePath;
-                
+
                 \Log::info('Image uploaded successfully', ['path' => $filePath, 'full_path' => '/storage/' . $filePath]);
             } else {
                 \Log::info('No image file in request');
@@ -186,17 +186,25 @@ class ProductController extends Controller
             // Store old values before update
             $oldValues = $product->only(array_keys($updateData));
 
-            $product->update($updateData);
-
-            // Check if there are actual changes
+            // Check if there are actual changes before updating
             $hasChanges = false;
             foreach ($updateData as $key => $newValue) {
                 $oldValue = $oldValues[$key] ?? null;
                 // Compare values, handle numeric comparisons properly
                 if (is_numeric($oldValue) && is_numeric($newValue)) {
-                    if ((float)$oldValue != (float)$newValue) {
-                        $hasChanges = true;
-                        break;
+                    // Compare as rounded decimals to avoid floating point precision issues
+                    if ($key === 'price') {
+                        // Compare price to 2 decimal places
+                        if (round((float)$oldValue, 2) != round((float)$newValue, 2)) {
+                            $hasChanges = true;
+                            break;
+                        }
+                    } else {
+                        // Compare integers or other numbers
+                        if ((int)$oldValue != (int)$newValue) {
+                            $hasChanges = true;
+                            break;
+                        }
                     }
                 } else if ($oldValue != $newValue) {
                     $hasChanges = true;
@@ -204,15 +212,42 @@ class ProductController extends Controller
                 }
             }
 
+            // Always update the product (to refresh timestamps, etc)
+            $product->update($updateData);
+
             // Only log if there are actual changes
             if ($hasChanges) {
+                // Format values consistently for audit log to avoid display issues
+                $formattedOldValues = [];
+                $formattedNewValues = [];
+                foreach ($updateData as $key => $newValue) {
+                    $oldValue = $oldValues[$key] ?? null;
+                    // Only include fields that actually changed
+                    if (is_numeric($oldValue) && is_numeric($newValue)) {
+                        if ($key === 'price') {
+                            if (round((float)$oldValue, 2) != round((float)$newValue, 2)) {
+                                $formattedOldValues[$key] = number_format((float)$oldValue, 2, '.', '');
+                                $formattedNewValues[$key] = number_format((float)$newValue, 2, '.', '');
+                            }
+                        } else {
+                            if ((int)$oldValue != (int)$newValue) {
+                                $formattedOldValues[$key] = (int)$oldValue;
+                                $formattedNewValues[$key] = (int)$newValue;
+                            }
+                        }
+                    } else if ($oldValue != $newValue) {
+                        $formattedOldValues[$key] = $oldValue;
+                        $formattedNewValues[$key] = $newValue;
+                    }
+                }
+
                 AuditLog::create([
                     'user_id' => auth()->id(),
                     'product_id' => $product->id,
                     'action' => 'updated',
                     'product_name' => $product->name,
-                    'old_values' => $oldValues,
-                    'new_values' => $updateData,
+                    'old_values' => $formattedOldValues,
+                    'new_values' => $formattedNewValues,
                 ]);
             }
 
@@ -251,19 +286,19 @@ class ProductController extends Controller
 
             if ($request->hasFile('image')) {
                 \Log::info('Image file detected in updateWithImage, processing upload');
-                
+
                 // Delete old image if it exists
                 if ($product->image_url) {
                     $oldImagePath = str_replace('/storage/', '', $product->image_url);
                     Storage::disk('public')->delete($oldImagePath);
                 }
-                
+
                 // Upload new image using storeAs method with proper disk
                 $file = $request->file('image');
                 $fileName = time() . '_' . $file->getClientOriginalName();
                 $filePath = $file->storeAs('products', $fileName, 'public');
                 $updateData['image_url'] = '/storage/' . $filePath;
-                
+
                 \Log::info('Image uploaded successfully in updateWithImage', ['path' => $filePath, 'full_path' => '/storage/' . $filePath]);
             } else {
                 \Log::info('No image file in updateWithImage request');
@@ -272,17 +307,25 @@ class ProductController extends Controller
             // Store old values before update
             $oldValues = $product->only(array_keys($updateData));
 
-            $product->update($updateData);
-
-            // Check if there are actual changes
+            // Check if there are actual changes before updating
             $hasChanges = false;
             foreach ($updateData as $key => $newValue) {
                 $oldValue = $oldValues[$key] ?? null;
                 // Compare values, handle numeric comparisons properly
                 if (is_numeric($oldValue) && is_numeric($newValue)) {
-                    if ((float)$oldValue != (float)$newValue) {
-                        $hasChanges = true;
-                        break;
+                    // Compare as rounded decimals to avoid floating point precision issues
+                    if ($key === 'price') {
+                        // Compare price to 2 decimal places
+                        if (round((float)$oldValue, 2) != round((float)$newValue, 2)) {
+                            $hasChanges = true;
+                            break;
+                        }
+                    } else {
+                        // Compare integers or other numbers
+                        if ((int)$oldValue != (int)$newValue) {
+                            $hasChanges = true;
+                            break;
+                        }
                     }
                 } else if ($oldValue != $newValue) {
                     $hasChanges = true;
@@ -290,15 +333,42 @@ class ProductController extends Controller
                 }
             }
 
+            // Always update the product (to refresh timestamps, etc)
+            $product->update($updateData);
+
             // Only log if there are actual changes
             if ($hasChanges) {
+                // Format values consistently for audit log to avoid display issues
+                $formattedOldValues = [];
+                $formattedNewValues = [];
+                foreach ($updateData as $key => $newValue) {
+                    $oldValue = $oldValues[$key] ?? null;
+                    // Only include fields that actually changed
+                    if (is_numeric($oldValue) && is_numeric($newValue)) {
+                        if ($key === 'price') {
+                            if (round((float)$oldValue, 2) != round((float)$newValue, 2)) {
+                                $formattedOldValues[$key] = number_format((float)$oldValue, 2, '.', '');
+                                $formattedNewValues[$key] = number_format((float)$newValue, 2, '.', '');
+                            }
+                        } else {
+                            if ((int)$oldValue != (int)$newValue) {
+                                $formattedOldValues[$key] = (int)$oldValue;
+                                $formattedNewValues[$key] = (int)$newValue;
+                            }
+                        }
+                    } else if ($oldValue != $newValue) {
+                        $formattedOldValues[$key] = $oldValue;
+                        $formattedNewValues[$key] = $newValue;
+                    }
+                }
+
                 AuditLog::create([
                     'user_id' => auth()->id(),
                     'product_id' => $product->id,
                     'action' => 'updated',
                     'product_name' => $product->name,
-                    'old_values' => $oldValues,
-                    'new_values' => $updateData,
+                    'old_values' => $formattedOldValues,
+                    'new_values' => $formattedNewValues,
                 ]);
             }
 

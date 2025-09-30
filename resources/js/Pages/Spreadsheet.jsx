@@ -28,6 +28,7 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
     const [showLowStock, setShowLowStock] = useState(false);
     const [showNoStock, setShowNoStock] = useState(false);
     const [showHiddenStock, setShowHiddenStock] = useState(false);
+    const [hideHiddenProducts, setHideHiddenProducts] = useState(false);
 
     const formatGMT8Time = (date) => {
         const options = {
@@ -488,15 +489,16 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
                                 <div className="mt-4 text-sm text-gray-600">
                                     {(() => {
                                         const filteredCount = products.filter(product => {
+                                            if (hideHiddenProducts && product.is_hidden) return false;
+                                            if (showHiddenStock && !product.is_hidden) return false;
                                             if (showLowStock && product.quantity > 10) return false;
                                             if (showNoStock && product.quantity !== 0) return false;
-                                            if (showHiddenStock && !product.is_hidden) return false;
                                             return true;
                                         }).length;
 
                                         if (searchTerm) {
                                             return <span>Found {filteredCount} of {products.length} product(s) matching "{searchTerm}"</span>;
-                                        } else if (showLowStock || showNoStock || showHiddenStock) {
+                                        } else if (showLowStock || showNoStock || showHiddenStock || hideHiddenProducts) {
                                             return <span>Showing {filteredCount} of {products.length} product(s)</span>;
                                         } else {
                                             return <span>Showing {products.length} product(s)</span>;
@@ -528,10 +530,25 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
                                         <input
                                             type="checkbox"
                                             checked={showHiddenStock}
-                                            onChange={(e) => setShowHiddenStock(e.target.checked)}
+                                            onChange={(e) => {
+                                                setShowHiddenStock(e.target.checked);
+                                                if (e.target.checked) setHideHiddenProducts(false);
+                                            }}
                                             className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                         />
-                                        <span className="text-sm text-gray-700">Show Hidden Products</span>
+                                        <span className="text-sm text-gray-700">Show Only Hidden Products</span>
+                                    </label>
+                                    <label className="flex items-center space-x-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={hideHiddenProducts}
+                                            onChange={(e) => {
+                                                setHideHiddenProducts(e.target.checked);
+                                                if (e.target.checked) setShowHiddenStock(false);
+                                            }}
+                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                        />
+                                        <span className="text-sm text-gray-700">Hide Hidden Products</span>
                                     </label>
                                 </div>
                             </div>
@@ -564,9 +581,16 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
                             {(() => {
                                 // Apply filters
                                 const filteredProducts = products.filter(product => {
+                                    // Hide hidden products takes priority
+                                    if (hideHiddenProducts && product.is_hidden) return false;
+
+                                    // Show only hidden products
+                                    if (showHiddenStock && !product.is_hidden) return false;
+
+                                    // Stock filters
                                     if (showLowStock && product.quantity > 10) return false;
                                     if (showNoStock && product.quantity !== 0) return false;
-                                    if (showHiddenStock && !product.is_hidden) return false;
+
                                     return true;
                                 });
 
@@ -589,7 +613,16 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
                                     </div>
                                 ) : (
                                 <div className="overflow-x-auto">
-                                    <table className="min-w-full table-auto">
+                                    <table className="min-w-full table-fixed">
+                                        <colgroup>
+                                            <col className="w-16" />
+                                            <col className="w-40" />
+                                            <col className="w-64" />
+                                            <col className="w-24" />
+                                            <col className="w-24" />
+                                            <col className="w-32" />
+                                            <col className="w-40" />
+                                        </colgroup>
                                         <thead>
                                             <tr className="bg-gray-50">
                                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
