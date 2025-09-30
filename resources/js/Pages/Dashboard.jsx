@@ -17,22 +17,22 @@ export default function Dashboard({ stats, recentProducts, topProducts }) {
                     {/* Welcome Section */}
                     <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                         <div className="p-6 text-gray-900">
-                            <h3 className="text-lg font-medium mb-4">Welcome to the Product Catalog!</h3>
+                            <h2 className="text-lg font-medium mb-4">Inventory Overview</h2>
                             <p className="text-gray-600 mb-6">
                                 Manage your products easily with our catalog system. You can view all products, add new ones, and manage your inventory.
                             </p>
                             <div className="flex space-x-4">
                                 <Link
+                                    href="/spreadsheet"
+                                    className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                                >
+                                    + Add Product
+                                </Link>
+                                <Link
                                     href="/catalogue"
                                     className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                                 >
                                     View Catalogue
-                                </Link>
-                                <Link
-                                    href="/spreadsheet"
-                                    className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-                                >
-                                    Add Product
                                 </Link>
                             </div>
                         </div>

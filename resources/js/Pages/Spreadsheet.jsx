@@ -481,9 +481,11 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
 
                             {/* Last Edit Timestamp */}
                             {lastEditTime && (
-                                <div className="mb-4 text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-lg border border-gray-200">
-                                    <span className="font-medium">Last edit:</span> {formatGMT8Time(lastEditTime)}
-                                </div>
+                                <Link href="/audit-logs">
+                                    <div className="mb-4 text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-lg border border-gray-200">
+                                        <span className="font-medium">Last edit:</span> {formatGMT8Time(lastEditTime)}
+                                    </div>
+                                </Link>
                             )}
                             
                             {products.length === 0 ? (
