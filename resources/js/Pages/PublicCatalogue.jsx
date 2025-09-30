@@ -107,40 +107,63 @@ export default function PublicCatalogue({ products = [], filters = {} }) {
                                 </div>
                                 
                                 {/* Sort Controls */}
-                                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                                    <select
-                                        value={sortBy}
-                                        onChange={(e) => handleSort(e.target.value, sortDirection)}
-                                        className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[140px]"
-                                    >
-                                        <option value="created_at">Date Added</option>
-                                        <option value="name">Name</option>
-                                        <option value="price">Price</option>
-                                        <option value="quantity">Quantity</option>
-                                    </select>
+                               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => handleSort(e.target.value, sortDirection)}
+                    className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[140px]"
+                  >
+                    <option value="created_at">Date Added</option>
+                    <option value="name">Name</option>
+                    <option value="price">Price</option>
+                    <option value="quantity">Quantity</option>
+                  </select>
 
-                                    {sortBy === 'price' && (
-                                        <select
-                                            value={sortDirection}
-                                            onChange={(e) => handleSort(sortBy, e.target.value)}
-                                            className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
-                                        >
-                                            <option value="desc">High to Low</option>
-                                            <option value="asc">Low to High</option>
-                                        </select>
-                                    )}
+                  {sortBy === "price" && (
+                    <select
+                      value={sortDirection}
+                      onChange={(e) => handleSort(sortBy, e.target.value)}
+                      className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
+                    >
+                      <option value="desc">High to Low</option>
+                      <option value="asc">Low to High</option>
+                    </select>
+                  )}
 
-                                    {sortBy !== 'price' && (
-                                        <select
-                                            value={sortDirection}
-                                            onChange={(e) => handleSort(sortBy, e.target.value)}
-                                            className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
-                                        >
-                                            <option value="desc">Newest</option>
-                                            <option value="asc">Oldest</option>
-                                        </select>
-                                    )}
-                                </div>
+                  {sortBy === "quantity" && (
+                    <select
+                      value={sortDirection}
+                      onChange={(e) => handleSort(sortBy, e.target.value)}
+                      className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
+                    >
+                      <option value="asc">Low to High</option>
+                      <option value="desc">High to Low</option>
+                    </select>
+                  )}
+
+                  {sortBy === "name" && (
+                    <select
+                      value={sortDirection}
+                      onChange={(e) => handleSort(sortBy, e.target.value)}
+                      className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
+                    >
+                      <option value="asc">A to Z</option>
+                      <option value="desc">Z to A</option>
+                    </select>
+                  )}
+
+                  {sortBy === "created_at" && (
+                    <select
+                      value={sortDirection}
+                      onChange={(e) => handleSort(sortBy, e.target.value)}
+                      className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
+                    >
+                      <option value="desc">Newest</option>
+                      <option value="asc">Oldest</option>
+                    </select>
+                  )}
+</div>
+
                             </div>
                         </div>
                     </div>
@@ -176,7 +199,7 @@ export default function PublicCatalogue({ products = [], filters = {} }) {
                             'grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6'
                         }`}>
                             {products.map((product) => (
-                                <div key={product.id} className="bg-white rounded-md sm:rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col h-full">
+                                <div key={product.id} className="bg-white rounded-md sm:rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col h-full ">
                                     <Link 
                                         href={`/products/${product.id}`}
                                         className="flex flex-col h-full"
