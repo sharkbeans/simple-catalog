@@ -186,7 +186,8 @@ export default function AuditLogs({ logs }) {
         const matchesAction = filterAction === 'all' || log.action === filterAction;
         const matchesSearch = !searchTerm ||
             log.product_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            log.user?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+            log.product?.product_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            log.new_values?.product_code?.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesAction && matchesSearch;
     });
 
@@ -221,7 +222,7 @@ export default function AuditLogs({ logs }) {
                                 <div className="flex-1">
                                     <input
                                         type="text"
-                                        placeholder="Search by product name or user..."
+                                        placeholder="Search by product name or product code..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -279,7 +280,7 @@ export default function AuditLogs({ logs }) {
                                                     Product
                                                 </th>
                                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    User
+                                                    Product Code
                                                 </th>
                                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Details
@@ -307,15 +308,10 @@ export default function AuditLogs({ logs }) {
                                                             <div className="text-sm font-medium text-gray-900">
                                                                 {log.product_name || 'Unknown Product'}
                                                             </div>
-                                                            {log.product_id && (
-                                                                <div className="text-xs text-gray-500">
-                                                                    ID: {log.product_id}
-                                                                </div>
-                                                            )}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap">
                                                             <div className="text-sm text-gray-900">
-                                                                {log.user?.name || 'Unknown User'}
+                                                                {log.product?.product_code || log.new_values?.product_code || 'N/A'}
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm">

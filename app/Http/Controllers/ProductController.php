@@ -51,7 +51,7 @@ class ProductController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Product::query();
-        
+
         // Search functionality
         if ($request->has('search') && $request->search) {
             $searchTerm = $request->search;
@@ -86,6 +86,7 @@ class ProductController extends Controller
     {
         try {
             $validated = $request->validate([
+                'product_code' => 'required|string|max:50|unique:products,product_code',
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',
                 'price' => 'required|numeric|min:0',
@@ -103,6 +104,7 @@ class ProductController extends Controller
             }
 
             $productData = [
+                'product_code' => $validated['product_code'],
                 'name' => $validated['name'],
                 'description' => $validated['description'],
                 'price' => $validated['price'],
@@ -149,6 +151,7 @@ class ProductController extends Controller
             ]);
 
             $validated = $request->validate([
+                'product_code' => 'sometimes|required|string|max:50|unique:products,product_code,' . $product->id,
                 'name' => 'sometimes|required|string|max:255',
                 'description' => 'nullable|string',
                 'price' => 'sometimes|required|numeric|min:0',
@@ -158,6 +161,7 @@ class ProductController extends Controller
 
             // Handle image upload
             $updateData = [];
+            if (isset($validated['product_code'])) $updateData['product_code'] = $validated['product_code'];
             if (isset($validated['name'])) $updateData['name'] = $validated['name'];
             if (isset($validated['description'])) $updateData['description'] = $validated['description'];
             if (isset($validated['price'])) $updateData['price'] = $validated['price'];
@@ -270,6 +274,7 @@ class ProductController extends Controller
             ]);
 
             $validated = $request->validate([
+                'product_code' => 'sometimes|required|string|max:50|unique:products,product_code,' . $product->id,
                 'name' => 'sometimes|required|string|max:255',
                 'description' => 'nullable|string',
                 'price' => 'sometimes|required|numeric|min:0',
@@ -279,6 +284,7 @@ class ProductController extends Controller
 
             // Handle image upload
             $updateData = [];
+            if (isset($validated['product_code'])) $updateData['product_code'] = $validated['product_code'];
             if (isset($validated['name'])) $updateData['name'] = $validated['name'];
             if (isset($validated['description'])) $updateData['description'] = $validated['description'];
             if (isset($validated['price'])) $updateData['price'] = $validated['price'];

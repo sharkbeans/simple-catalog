@@ -55,6 +55,7 @@ export default function ProductDetails({ product }) {
                 price: product.price,
                 quantity: finalQuantity,
                 image_url: product.image_url,
+                product_code: product.product_code,
                 maxStock: product.quantity // Store max stock for cart validation
             });
         }
@@ -81,10 +82,10 @@ export default function ProductDetails({ product }) {
             setQuantity(finalQuantity);
         }
 
-        const message = `Product Order\n\nItem 1: ${product.name}\nQty: ${finalQuantity}\nPrice: RM${(product.price * finalQuantity).toFixed(2)}\n\nOrder Total: RM${(product.price * finalQuantity).toFixed(2)}\nPlease provide an invoice. Thank you!`;
+        const message = `Product Order\n\n1. [${product.product_code}] ${product.name} - RM${product.price} x ${finalQuantity} = RM${(product.price * finalQuantity).toFixed(2)}\n\nOrder Total: RM${(product.price * finalQuantity).toFixed(2)}\nPlease provide an invoice. Thank you!`;
 
         const encodedMessage = encodeURIComponent(message);
-        const phoneNumber = '+60124408720';
+        const phoneNumber = '+60123456000';
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
 
         window.open(whatsappUrl, '_blank');
@@ -192,6 +193,7 @@ export default function ProductDetails({ product }) {
                                 {/* Product Details */}
                                 <div className="space-y-6">
                                     <div>
+                                        <div className="text-sm text-gray-500 mb-2">Product Code: {product.product_code}</div>
                                         <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
                                         <p className="text-2xl font-semibold text-green-600">RM{product.price}</p>
                                     </div>

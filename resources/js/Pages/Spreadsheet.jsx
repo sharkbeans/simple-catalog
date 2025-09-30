@@ -11,6 +11,7 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
     const [success, setSuccess] = useState('');
     const [editingRows, setEditingRows] = useState(new Set());
     const [newProduct, setNewProduct] = useState({
+        product_code: '',
         name: '',
         description: '',
         price: '',
@@ -99,6 +100,7 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
             
             // Use FormData for file upload
             const formData = new FormData();
+            formData.append('product_code', product.product_code);
             formData.append('name', product.name);
             formData.append('description', product.description || '');
             formData.append('price', parseFloat(product.price));
@@ -257,6 +259,7 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
             
             // Use FormData for file upload
             const formData = new FormData();
+            formData.append('product_code', newProduct.product_code);
             formData.append('name', newProduct.name);
             formData.append('description', newProduct.description || '');
             formData.append('price', parseFloat(newProduct.price));
@@ -279,7 +282,7 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
 
             if (response.ok) {
                 setProducts([result, ...products]); // Add to beginning for newest first
-                setNewProduct({ name: '', description: '', price: '', quantity: '', image_url: '' });
+                setNewProduct({ product_code: '', name: '', description: '', price: '', quantity: '', image_url: '' });
                 setNewProductImage(null);
                 setShowAddForm(false);
                 setLastEditTime(new Date(result.updated_at));
@@ -374,6 +377,17 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
                                         <div>
                                             <input
                                                 type="text"
+                                                value={newProduct.product_code}
+                                                onChange={(e) => handleNewProductChange('product_code', e.target.value)}
+                                                className="w-full p-2 border border-gray-300 rounded"
+                                                placeholder="Product Code (e.g., STP-001)"
+                                                required
+                                            />
+                                            {errors.product_code && <p className="text-red-500 text-sm mt-1">{errors.product_code[0]}</p>}
+                                        </div>
+                                        <div>
+                                            <input
+                                                type="text"
                                                 value={newProduct.name}
                                                 onChange={(e) => handleNewProductChange('name', e.target.value)}
                                                 className="w-full p-2 border border-gray-300 rounded"
@@ -382,6 +396,8 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
                                             />
                                             {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name[0]}</p>}
                                         </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                         <div>
                                             <input
                                                 type="number"
@@ -394,6 +410,18 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
                                                 required
                                             />
                                             {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price[0]}</p>}
+                                        </div>
+                                        <div>
+                                            <input
+                                                type="number"
+                                                value={newProduct.quantity}
+                                                onChange={(e) => handleNewProductChange('quantity', e.target.value)}
+                                                className="w-full p-2 border border-gray-300 rounded"
+                                                placeholder="Quantity"
+                                                min="0"
+                                                required
+                                            />
+                                            {errors.quantity && <p className="text-red-500 text-sm mt-1">{errors.quantity[0]}</p>}
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -632,6 +660,7 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
                                     <table className="min-w-full table-fixed">
                                         <colgroup>
                                             <col className="w-16" />
+                                            <col className="w-32" />
                                             <col className="w-40" />
                                             <col className="w-64" />
                                             <col className="w-24" />
@@ -642,6 +671,7 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
                                         <thead>
                                             <tr className="bg-gray-50">
                                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product Code</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
@@ -655,6 +685,18 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
                                                 <tr key={product.id} className={`hover:bg-gray-50 ${product.is_hidden ? 'bg-gray-100' : ''}`}>
                                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                                                         {product.id}
+                                                    </td>
+                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                        {editingRows.has(product.id) ? (
+                                                            <input
+                                                                type="text"
+                                                                value={product.product_code}
+                                                                onChange={(e) => handleProductChange(product.id, 'product_code', e.target.value)}
+                                                                className="w-full p-1 border border-gray-300 rounded text-sm"
+                                                            />
+                                                        ) : (
+                                                            <div className="text-sm text-gray-900">{product.product_code}</div>
+                                                        )}
                                                     </td>
                                                     <td className="px-4 py-4 whitespace-nowrap">
                                                         {editingRows.has(product.id) ? (

@@ -212,6 +212,7 @@ export default function PublicCatalogue({ products = [], filters = {} }) {
                                             />
                                         )}
                                         <div className="p-1.5 sm:p-4 flex flex-col flex-grow">
+                                            <div className="text-xs text-gray-500 mb-1">{product.product_code}</div>
                                             <h3 className="font-semibold text-sm sm:text-lg text-gray-900 mb-1 sm:mb-2 overflow-hidden">{product.name}</h3>
                                             <div className="flex-grow mb-1 sm:mb-2 min-h-[2rem] sm:min-h-[2.5rem]">
                                                 {product.description && (
