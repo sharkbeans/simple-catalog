@@ -112,27 +112,26 @@ export default function Cart() {
             <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
             <nav className="border-b border-gray-100 bg-white">
-                <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
-                    <div className="flex h-14 sm:h-16 justify-between items-center">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="flex h-16 justify-between items-center">
                         <div className="flex items-center min-w-0 flex-1">
                             <button
                                 onClick={() => setSidebarOpen(true)}
-                                className="mr-2 sm:mr-4 text-gray-600 hover:text-gray-800 focus:outline-none"
+                                className="mr-2 sm:mr-4 text-gray-600 hover:text-gray-800 focus:outline-none flex-shrink-0"
                             >
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                                 </svg>
                             </button>
                             <Link href="/" className="flex-shrink-0">
-                                <ApplicationLogo className="block h-8 sm:h-9 w-auto fill-current text-gray-800" />
+                                <ApplicationLogo className="block h-9 w-auto fill-current text-gray-800" />
                             </Link>
-                            <h1 className="ml-2 sm:ml-4 text-base sm:text-lg lg:text-xl font-semibold text-gray-900 hidden xs:block sm:hidden lg:block truncate">Shopping Cart</h1>
-                            <h1 className="ml-2 text-base font-semibold text-gray-900 xs:hidden sm:block lg:hidden truncate">Cart</h1>
+                            <h1 className="ml-2 sm:ml-4 text-lg sm:text-xl font-semibold text-gray-900 truncate">Shopping Cart</h1>
                         </div>
                         <div className="flex items-center ml-2">
                             <Link
                                 href="/public-catalog"
-                                className="text-gray-600 hover:text-gray-900 text-sm sm:text-sm lg:text-base px-2 sm:px-3 py-2 rounded-md transition-colors"
+                                className="text-gray-600 hover:text-gray-900 text-sm sm:text-base px-3 py-2 rounded-md transition-colors"
                             >
                                 <span className="hidden sm:inline">Back to Catalog</span>
                                 <span className="sm:hidden">Catalog</span>

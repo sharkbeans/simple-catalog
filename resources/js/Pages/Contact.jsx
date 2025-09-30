@@ -16,26 +16,27 @@ export default function Contact() {
             <nav className="border-b border-gray-100 bg-white">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex h-16 justify-between items-center">
-                        <div className="flex items-center">
+                        <div className="flex items-center min-w-0 flex-1">
                             <button
                                 onClick={() => setSidebarOpen(true)}
-                                className="mr-4 text-gray-600 hover:text-gray-800 focus:outline-none"
+                                className="mr-2 sm:mr-4 text-gray-600 hover:text-gray-800 focus:outline-none flex-shrink-0"
                             >
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                                 </svg>
                             </button>
-                            <Link href="/">
+                            <Link href="/" className="flex-shrink-0">
                                 <ApplicationLogo className="block h-9 w-auto fill-current text-gray-800" />
                             </Link>
-                            <h1 className="ml-4 text-xl font-semibold text-gray-900">Contact Us</h1>
+                            <h1 className="ml-2 sm:ml-4 text-lg sm:text-xl font-semibold text-gray-900 truncate">Contact Us</h1>
                         </div>
-                        <div className="flex items-center">
+                        <div className="flex items-center ml-2">
                             <Link
                                 href="/public-catalog"
-                                className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md transition-colors"
+                                className="text-gray-600 hover:text-gray-900 text-sm sm:text-base px-3 py-2 rounded-md transition-colors"
                             >
-                                Back to Catalog
+                                <span className="hidden sm:inline">Back to Catalog</span>
+                                <span className="sm:hidden">Catalog</span>
                             </Link>
                         </div>
                     </div>

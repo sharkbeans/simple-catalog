@@ -14,7 +14,22 @@ Route::get('/cart', [App\Http\Controllers\PublicProductController::class, 'cart'
 Route::get('/contact', fn() => Inertia::render('Contact'))->name('contact');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', fn() => Inertia::render('Dashboard'))->name('dashboard');
+    Route::get('/dashboard', function () {
+        $products = \App\Models\Product::all();
+
+        return Inertia::render('Dashboard', [
+            'stats' => [
+                'totalProducts' => $products->count(),
+                'totalValue' => $products->sum(fn($p) => $p->price * $p->quantity),
+                'totalStock' => $products->sum('quantity'),
+                'lowStock' => $products->where('quantity', '<', 10)->count(),
+                'outOfStock' => $products->where('quantity', '=', 0)->count(),
+                'averagePrice' => $products->avg('price'),
+            ],
+            'recentProducts' => $products->sortByDesc('created_at')->take(5)->values(),
+            'topProducts' => $products->sortByDesc(fn($p) => $p->price * $p->quantity)->take(5)->values(),
+        ]);
+    })->name('dashboard');
 
     Route::get('/catalogue', [App\Http\Controllers\AdminCatalogController::class, 'index'])->name('catalogue');
 
