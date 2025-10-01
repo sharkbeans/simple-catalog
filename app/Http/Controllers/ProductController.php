@@ -482,7 +482,7 @@ class ProductController extends Controller
                         'product_code' => trim($data['product_code'] ?? ''),
                         'name' => trim($data['name'] ?? ''),
                         'description' => trim($data['description'] ?? ''),
-                        'price' => floatval($data['price'] ?? 0),
+                        'price' => number_format(floatval($data['price'] ?? 0), 2, '.', ''),
                         'quantity' => intval($data['quantity'] ?? 0),
                         'image_url' => trim($data['image_url'] ?? ''),
                     ];
@@ -507,16 +507,74 @@ class ProductController extends Controller
                     if ($existingProduct) {
                         // Update existing product
                         $oldValues = $existingProduct->only(array_keys($productData));
+
+                        // Check if there are actual changes
+                        $hasChanges = false;
+                        foreach ($productData as $key => $newValue) {
+                            $oldValue = $oldValues[$key] ?? null;
+                            // Compare values, handle numeric comparisons properly
+                            if (is_numeric($oldValue) && is_numeric($newValue)) {
+                                if ($key === 'price') {
+                                    // Normalize both values to 2 decimal string format for comparison
+                                    $normalizedOld = number_format((float)$oldValue, 2, '.', '');
+                                    $normalizedNew = number_format((float)$newValue, 2, '.', '');
+                                    if ($normalizedOld !== $normalizedNew) {
+                                        $hasChanges = true;
+                                        break;
+                                    }
+                                } else {
+                                    // Compare integers or other numbers
+                                    if ((int)$oldValue != (int)$newValue) {
+                                        $hasChanges = true;
+                                        break;
+                                    }
+                                }
+                            } else if ($oldValue != $newValue) {
+                                $hasChanges = true;
+                                break;
+                            }
+                        }
+
                         $existingProduct->update($productData);
 
-                        AuditLog::create([
-                            'user_id' => auth()->id(),
-                            'product_id' => $existingProduct->id,
-                            'action' => 'updated_via_csv',
-                            'product_name' => $existingProduct->name,
-                            'old_values' => $oldValues,
-                            'new_values' => $productData,
-                        ]);
+                        // Only log if there are actual changes
+                        if ($hasChanges) {
+                            // Format values consistently for audit log
+                            $formattedOldValues = [];
+                            $formattedNewValues = [];
+                            foreach ($productData as $key => $newValue) {
+                                $oldValue = $oldValues[$key] ?? null;
+                                // Only include fields that actually changed
+                                if (is_numeric($oldValue) && is_numeric($newValue)) {
+                                    if ($key === 'price') {
+                                        // Normalize both values to 2 decimal string format for comparison
+                                        $normalizedOld = number_format((float)$oldValue, 2, '.', '');
+                                        $normalizedNew = number_format((float)$newValue, 2, '.', '');
+                                        if ($normalizedOld !== $normalizedNew) {
+                                            $formattedOldValues[$key] = $normalizedOld;
+                                            $formattedNewValues[$key] = $normalizedNew;
+                                        }
+                                    } else {
+                                        if ((int)$oldValue != (int)$newValue) {
+                                            $formattedOldValues[$key] = (int)$oldValue;
+                                            $formattedNewValues[$key] = (int)$newValue;
+                                        }
+                                    }
+                                } else if ($oldValue != $newValue) {
+                                    $formattedOldValues[$key] = $oldValue;
+                                    $formattedNewValues[$key] = $newValue;
+                                }
+                            }
+
+                            AuditLog::create([
+                                'user_id' => auth()->id(),
+                                'product_id' => $existingProduct->id,
+                                'action' => 'updated_via_csv',
+                                'product_name' => $existingProduct->name,
+                                'old_values' => $formattedOldValues,
+                                'new_values' => $formattedNewValues,
+                            ]);
+                        }
                     } else {
                         // Create new product (server generates ID automatically)
                         $product = Product::create($productData);
