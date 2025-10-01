@@ -123,7 +123,7 @@ export default function PublicCatalogue({ products = [], filters = {} }) {
                     <select
                       value={sortDirection}
                       onChange={(e) => handleSort(sortBy, e.target.value)}
-                      className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
+                      className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[140px]"
                     >
                       <option value="desc">High to Low</option>
                       <option value="asc">Low to High</option>
@@ -134,7 +134,7 @@ export default function PublicCatalogue({ products = [], filters = {} }) {
                     <select
                       value={sortDirection}
                       onChange={(e) => handleSort(sortBy, e.target.value)}
-                      className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
+                      className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[140px]"
                     >
                       <option value="asc">Low to High</option>
                       <option value="desc">High to Low</option>
@@ -145,7 +145,7 @@ export default function PublicCatalogue({ products = [], filters = {} }) {
                     <select
                       value={sortDirection}
                       onChange={(e) => handleSort(sortBy, e.target.value)}
-                      className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
+                      className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[140px]"
                     >
                       <option value="asc">A to Z</option>
                       <option value="desc">Z to A</option>
@@ -156,7 +156,7 @@ export default function PublicCatalogue({ products = [], filters = {} }) {
                     <select
                       value={sortDirection}
                       onChange={(e) => handleSort(sortBy, e.target.value)}
-                      className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
+                      className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 min-w-[140px]"
                     >
                       <option value="desc">Newest</option>
                       <option value="asc">Oldest</option>

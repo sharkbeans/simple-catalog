@@ -424,29 +424,15 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
                                             {errors.quantity && <p className="text-red-500 text-sm mt-1">{errors.quantity[0]}</p>}
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                        <div>
-                                            <textarea
-                                                value={newProduct.description}
-                                                onChange={(e) => handleNewProductChange('description', e.target.value)}
-                                                className="w-full p-2 border border-gray-300 rounded"
-                                                placeholder="Product Description (optional)"
-                                                rows="3"
-                                            />
-                                            {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description[0]}</p>}
-                                        </div>
-                                        <div>
-                                            <input
-                                                type="number"
-                                                value={newProduct.quantity}
-                                                onChange={(e) => handleNewProductChange('quantity', e.target.value)}
-                                                className="w-full p-2 border border-gray-300 rounded"
-                                                placeholder="Quantity"
-                                                min="0"
-                                                required
-                                            />
-                                            {errors.quantity && <p className="text-red-500 text-sm mt-1">{errors.quantity[0]}</p>}
-                                        </div>
+                                    <div className="mb-4">
+                                        <textarea
+                                            value={newProduct.description}
+                                            onChange={(e) => handleNewProductChange('description', e.target.value)}
+                                            className="w-full p-2 border border-gray-300 rounded"
+                                            placeholder="Product Description (optional)"
+                                            rows="3"
+                                        />
+                                        {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description[0]}</p>}
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
