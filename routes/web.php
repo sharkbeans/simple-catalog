@@ -23,6 +23,8 @@ Route::post('/quotations', [App\Http\Controllers\QuotationController::class, 'st
     ->name('quotations.store');
 Route::get('/quotations/{quotation:access_token}/view', [App\Http\Controllers\QuotationController::class, 'view'])
     ->name('quotations.view');
+Route::post('/quotations/{quotation:access_token}/approve', [App\Http\Controllers\QuotationController::class, 'approve'])
+    ->name('quotations.approve');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', function () {

@@ -125,8 +125,25 @@ class QuotationController extends Controller
     public function view(Quotation $quotation)
     {
         return Inertia::render('Quotations/View', [
-            'quotation' => $quotation
+            'quotation' => $quotation,
+            'auth' => [
+                'user' => auth()->user()
+            ]
         ]);
+    }
+
+    public function approve(Quotation $quotation)
+    {
+        // Only allow approval if not already approved and not by admin
+        if ($quotation->status === 'accepted') {
+            return back()->with('error', 'Quotation is already approved.');
+        }
+
+        $quotation->update([
+            'status' => 'accepted'
+        ]);
+
+        return back()->with('success', 'Quotation approved successfully!');
     }
 
     public function createFromCart(Request $request)
