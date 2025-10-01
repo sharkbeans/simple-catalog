@@ -30,10 +30,6 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
     const [showNoStock, setShowNoStock] = useState(false);
     const [showHiddenStock, setShowHiddenStock] = useState(false);
     const [hideHiddenProducts, setHideHiddenProducts] = useState(false);
-    const [showImportForm, setShowImportForm] = useState(false);
-    const [csvFile, setCsvFile] = useState(null);
-    const [importing, setImporting] = useState(false);
-    const [importResult, setImportResult] = useState(null);
 
     const formatGMT8Time = (date) => {
         const options = {
@@ -260,7 +256,7 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
 
         try {
             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
+            
             // Use FormData for file upload
             const formData = new FormData();
             formData.append('product_code', newProduct.product_code);
@@ -268,7 +264,7 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
             formData.append('description', newProduct.description || '');
             formData.append('price', parseFloat(newProduct.price));
             formData.append('quantity', parseInt(newProduct.quantity));
-
+            
             if (newProductImage) {
                 formData.append('image', newProductImage);
             }
@@ -301,58 +297,6 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
             }
         } catch (err) {
             setError('An error occurred while creating the product');
-        }
-    };
-
-    const handleCsvFileChange = (e) => {
-        const file = e.target.files[0];
-        setCsvFile(file);
-        setImportResult(null);
-    };
-
-    const handleCsvImport = async (e) => {
-        e.preventDefault();
-        if (!csvFile) {
-            setError('Please select a CSV file');
-            return;
-        }
-
-        setImporting(true);
-        setImportResult(null);
-        setError(null);
-
-        try {
-            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            const formData = new FormData();
-            formData.append('csv_file', csvFile);
-
-            const response = await fetch('/api/products/import/csv', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${auth.token}`,
-                    'X-CSRF-TOKEN': token
-                },
-                body: formData
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                setImportResult(result);
-                setCsvFile(null);
-                fetchProducts(); // Refresh the product list
-                setSuccess(`Successfully imported ${result.imported_count} products!`);
-                setTimeout(() => setSuccess(''), 5000);
-                if (result.imported_count > 0) {
-                    setTimeout(() => setShowImportForm(false), 3000);
-                }
-            } else {
-                setError(result.message || 'Failed to import CSV');
-            }
-        } catch (err) {
-            setError('An error occurred while importing the CSV file');
-        } finally {
-            setImporting(false);
         }
     };
 
@@ -422,105 +366,6 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-
-                    {/* CSV Import Form */}
-                    {showImportForm && (
-                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                            <div className="p-6">
-                                <h3 className="text-lg font-medium text-gray-900 mb-4">Import Products from CSV</h3>
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                                    <h4 className="font-medium text-blue-900 mb-2">CSV Format Requirements:</h4>
-                                    <ul className="text-sm text-blue-800 list-disc list-inside space-y-1">
-                                        <li>First row must contain headers: <code className="bg-blue-100 px-1 rounded">product_code, name, description, price, quantity, image_url</code></li>
-                                        <li>Required fields: <strong>product_code, name, price, quantity</strong></li>
-                                        <li>Optional fields: description, image_url</li>
-                                        <li>Product ID will be auto-assigned by the server</li>
-                                        <li>Rows with duplicate product codes will be skipped</li>
-                                    </ul>
-                                </div>
-                                <form onSubmit={handleCsvImport} className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Select CSV File
-                                        </label>
-                                        <input
-                                            type="file"
-                                            accept=".csv,text/csv"
-                                            onChange={handleCsvFileChange}
-                                            className="w-full p-2 border border-gray-300 rounded"
-                                            disabled={importing}
-                                        />
-                                        {csvFile && (
-                                            <p className="text-sm text-gray-600 mt-1">
-                                                Selected: {csvFile.name}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    {importResult && (
-                                        <div className="space-y-3">
-                                            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                                                <h4 className="font-medium text-green-900 mb-2">Import Summary</h4>
-                                                <div className="text-sm text-green-800 space-y-1">
-                                                    <p>✓ Successfully imported: <strong>{importResult.imported_count}</strong> products</p>
-                                                    {importResult.skipped_count > 0 && (
-                                                        <p>⚠ Skipped: <strong>{importResult.skipped_count}</strong> products</p>
-                                                    )}
-                                                    {importResult.error_count > 0 && (
-                                                        <p>✗ Errors: <strong>{importResult.error_count}</strong> products</p>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {importResult.skipped && importResult.skipped.length > 0 && (
-                                                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                                                    <h4 className="font-medium text-yellow-900 mb-2">Skipped Products</h4>
-                                                    <div className="text-sm text-yellow-800 space-y-2 max-h-40 overflow-y-auto">
-                                                        {importResult.skipped.map((skip, idx) => (
-                                                            <div key={idx} className="border-b border-yellow-200 pb-1">
-                                                                <p>Row {skip.row}: {skip.reason}</p>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {importResult.errors && importResult.errors.length > 0 && (
-                                                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                                                    <h4 className="font-medium text-red-900 mb-2">Errors</h4>
-                                                    <div className="text-sm text-red-800 space-y-2 max-h-40 overflow-y-auto">
-                                                        {importResult.errors.map((err, idx) => (
-                                                            <div key={idx} className="border-b border-red-200 pb-1">
-                                                                <p>Row {err.row}: {err.error}</p>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    <div className="flex justify-end space-x-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setShowImportForm(false);
-                                                setCsvFile(null);
-                                                setImportResult(null);
-                                            }}
-                                            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
-                                            disabled={importing}
-                                        >
-                                            Close
-                                        </button>
-                                        <PrimaryButton type="submit" disabled={!csvFile || importing}>
-                                            {importing ? 'Importing...' : 'Import CSV'}
-                                        </PrimaryButton>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    )}
 
                     {/* Add New Product Form */}
                     {showAddForm && (
@@ -746,26 +591,12 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
                             {/* Header with Add Product Button */}
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-lg font-medium text-gray-900">Products</h3>
-                                <div className="flex space-x-2">
-                                    <button
-                                        onClick={() => {
-                                            setShowImportForm(!showImportForm);
-                                            if (!showImportForm) setShowAddForm(false);
-                                        }}
-                                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                                    >
-                                        {showImportForm ? 'Cancel Import' : 'Import CSV'}
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            setShowAddForm(!showAddForm);
-                                            if (!showAddForm) setShowImportForm(false);
-                                        }}
-                                        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-                                    >
-                                        {showAddForm ? 'Cancel' : 'Add Product'}
-                                    </button>
-                                </div>
+                                <button
+                                    onClick={() => setShowAddForm(!showAddForm)}
+                                    className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                                >
+                                    {showAddForm ? 'Cancel' : 'Add Product'}
+                                </button>
                             </div>
 
                             {/* Last Edit Timestamp */}
