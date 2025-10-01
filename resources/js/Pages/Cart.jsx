@@ -103,13 +103,13 @@ export default function Cart() {
         }
 
         let message = 'Product Order\n\n';
-        
+
         cartItems.forEach((item, index) => {
             message += `Item ${index + 1}: ${item.name}\n`;
             message += `Qty: ${item.quantity}\n`;
             message += `Price: RM${(item.price * item.quantity).toFixed(2)}\n\n`;
         });
-        
+
         message += `Order Total: RM${total.toFixed(2)}\n`;
         message += 'Please provide an invoice. Thank you!';
 
@@ -119,6 +119,19 @@ export default function Cart() {
 
         // Open WhatsApp
         window.open(whatsappUrl, '_blank');
+    };
+
+    const createQuotation = () => {
+        if (cartItems.length === 0) {
+            alert('Cart is empty!');
+            return;
+        }
+
+        // Store cart items in session storage for quotation creation
+        sessionStorage.setItem('quotation_items', JSON.stringify(cartItems));
+
+        // Navigate to quotation creation
+        window.location.href = '/quotations/create';
     };
 
     return (
@@ -371,6 +384,12 @@ export default function Cart() {
                                                 </svg>
                                                 <span className="hidden xs:inline">Order via WhatsApp</span>
                                                 <span className="xs:hidden">WhatsApp</span>
+                                            </button>
+                                            <button
+                                                onClick={createQuotation}
+                                                className="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-medium px-3 sm:px-4 py-3 sm:py-3 rounded-lg transition-colors text-sm sm:text-base touch-manipulation"
+                                            >
+                                                Create Quotation
                                             </button>
                                         </div>
                                     </div>

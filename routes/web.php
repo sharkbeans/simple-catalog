@@ -16,6 +16,14 @@ Route::get('/contact', fn() => Inertia::render('Contact'))->name('contact');
 // Public API route to get WhatsApp phone
 Route::get('/api/settings/whatsapp-phone', [App\Http\Controllers\SettingController::class, 'getWhatsappPhone']);
 
+// Public quotation routes (accessible without authentication)
+Route::get('/quotations/create', [App\Http\Controllers\QuotationController::class, 'create'])
+    ->name('quotations.create');
+Route::post('/quotations', [App\Http\Controllers\QuotationController::class, 'store'])
+    ->name('quotations.store');
+Route::get('/quotations/{quotation}/download', [App\Http\Controllers\QuotationController::class, 'download'])
+    ->name('quotations.download');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', function () {
         $products = \App\Models\Product::all();
@@ -57,6 +65,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'lastEditTime' => $latestProduct ? $latestProduct->updated_at->toIso8601String() : null,
         ]);
     })->name('spreadsheet');
+
+    // Admin-only quotation management routes
+    Route::get('/quotations', [App\Http\Controllers\QuotationController::class, 'index'])
+        ->name('quotations.index');
+    Route::get('/quotations/{quotation}', [App\Http\Controllers\QuotationController::class, 'show'])
+        ->name('quotations.show');
+    Route::get('/quotations/{quotation}/edit', [App\Http\Controllers\QuotationController::class, 'edit'])
+        ->name('quotations.edit');
+    Route::put('/quotations/{quotation}', [App\Http\Controllers\QuotationController::class, 'update'])
+        ->name('quotations.update');
+    Route::delete('/quotations/{quotation}', [App\Http\Controllers\QuotationController::class, 'destroy'])
+        ->name('quotations.destroy');
 });
 
 Route::middleware('auth')->group(function () {
