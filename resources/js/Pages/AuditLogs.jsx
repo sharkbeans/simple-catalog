@@ -39,8 +39,10 @@ export default function AuditLogs({ logs }) {
     const getActionColor = (action) => {
         switch (action) {
             case 'created':
+            case 'created_via_csv':
                 return 'bg-green-100 text-green-800 border-green-200';
             case 'updated':
+            case 'updated_via_csv':
                 return 'bg-blue-100 text-blue-800 border-blue-200';
             case 'deleted':
                 return 'bg-red-100 text-red-800 border-red-200';
@@ -56,12 +58,14 @@ export default function AuditLogs({ logs }) {
     const getActionIcon = (action) => {
         switch (action) {
             case 'created':
+            case 'created_via_csv':
                 return (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
                 );
             case 'updated':
+            case 'updated_via_csv':
                 return (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -93,7 +97,7 @@ export default function AuditLogs({ logs }) {
     };
 
     const renderChanges = (log) => {
-        if (log.action === 'created') {
+        if (log.action === 'created' || log.action === 'created_via_csv') {
             return (
                 <div className="mt-2 text-sm">
                     <p className="font-medium text-gray-700 mb-1">New values:</p>
@@ -133,7 +137,7 @@ export default function AuditLogs({ logs }) {
             );
         }
 
-        if (log.action === 'updated') {
+        if (log.action === 'updated' || log.action === 'updated_via_csv') {
             return (
                 <div className="mt-2 text-sm space-y-2">
                     {Object.keys(log.new_values || {}).map((key) => {
@@ -238,7 +242,9 @@ export default function AuditLogs({ logs }) {
                                     >
                                         <option value="all">All Actions</option>
                                         <option value="created">Created</option>
+                                        <option value="created_via_csv">Created via CSV</option>
                                         <option value="updated">Updated</option>
+                                        <option value="updated_via_csv">Updated via CSV</option>
                                         <option value="deleted">Deleted</option>
                                         <option value="hidden">Hidden</option>
                                         <option value="shown">Shown</option>
