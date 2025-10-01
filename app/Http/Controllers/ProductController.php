@@ -432,4 +432,124 @@ class ProductController extends Controller
         $product->delete();
         return response()->json(null, 204);
     }
+
+    /**
+     * Import products from CSV file.
+     */
+    public function importCsv(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'csv_file' => 'required|file|mimes:csv,txt|max:10240',
+            ]);
+
+            $file = $request->file('csv_file');
+            $csv = array_map('str_getcsv', file($file->getRealPath()));
+
+            // Get headers from first row
+            $headers = array_map('trim', $csv[0]);
+
+            // Validate required headers
+            $requiredHeaders = ['product_code', 'name', 'price', 'quantity'];
+            $missingHeaders = array_diff($requiredHeaders, $headers);
+
+            if (!empty($missingHeaders)) {
+                return response()->json([
+                    'message' => 'Missing required columns: ' . implode(', ', $missingHeaders),
+                    'errors' => ['csv_file' => ['Missing required columns: ' . implode(', ', $missingHeaders)]]
+                ], 422);
+            }
+
+            $imported = 0;
+            $skipped = 0;
+            $errors = [];
+
+            // Process each row (skip header)
+            for ($i = 1; $i < count($csv); $i++) {
+                $row = $csv[$i];
+
+                // Skip empty rows
+                if (empty(array_filter($row))) {
+                    continue;
+                }
+
+                // Map row to associative array
+                $data = array_combine($headers, $row);
+
+                try {
+                    // Validate and prepare product data (ignore 'id' if present)
+                    $productData = [
+                        'product_code' => trim($data['product_code'] ?? ''),
+                        'name' => trim($data['name'] ?? ''),
+                        'description' => trim($data['description'] ?? ''),
+                        'price' => floatval($data['price'] ?? 0),
+                        'quantity' => intval($data['quantity'] ?? 0),
+                        'image_url' => trim($data['image_url'] ?? ''),
+                    ];
+
+                    // Skip if product_code is empty
+                    if (empty($productData['product_code'])) {
+                        $skipped++;
+                        $errors[] = "Row " . ($i + 1) . ": Missing product_code";
+                        continue;
+                    }
+
+                    // Skip if name is empty
+                    if (empty($productData['name'])) {
+                        $skipped++;
+                        $errors[] = "Row " . ($i + 1) . ": Missing name";
+                        continue;
+                    }
+
+                    // Check if product already exists
+                    $existingProduct = Product::where('product_code', $productData['product_code'])->first();
+
+                    if ($existingProduct) {
+                        // Update existing product
+                        $oldValues = $existingProduct->only(array_keys($productData));
+                        $existingProduct->update($productData);
+
+                        AuditLog::create([
+                            'user_id' => auth()->id(),
+                            'product_id' => $existingProduct->id,
+                            'action' => 'updated_via_csv',
+                            'product_name' => $existingProduct->name,
+                            'old_values' => $oldValues,
+                            'new_values' => $productData,
+                        ]);
+                    } else {
+                        // Create new product (server generates ID automatically)
+                        $product = Product::create($productData);
+
+                        AuditLog::create([
+                            'user_id' => auth()->id(),
+                            'product_id' => $product->id,
+                            'action' => 'created_via_csv',
+                            'product_name' => $product->name,
+                            'new_values' => $productData,
+                        ]);
+                    }
+
+                    $imported++;
+                } catch (\Exception $e) {
+                    $skipped++;
+                    $errors[] = "Row " . ($i + 1) . ": " . $e->getMessage();
+                }
+            }
+
+            return response()->json([
+                'message' => "Import completed. Imported: {$imported}, Skipped: {$skipped}",
+                'imported' => $imported,
+                'skipped' => $skipped,
+                'errors' => $errors,
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json(['errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Import failed: ' . $e->getMessage(),
+                'errors' => ['csv_file' => [$e->getMessage()]]
+            ], 500);
+        }
+    }
 }

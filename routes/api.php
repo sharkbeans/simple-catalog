@@ -19,4 +19,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Toggle product visibility
     Route::patch('products/{product}/toggle-visibility', [ProductController::class, 'toggleVisibility']);
+
+    // Import products from CSV
+    Route::post('products/import/csv', [ProductController::class, 'importCsv']);
 });

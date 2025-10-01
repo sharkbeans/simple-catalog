@@ -30,6 +30,10 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
     const [showNoStock, setShowNoStock] = useState(false);
     const [showHiddenStock, setShowHiddenStock] = useState(false);
     const [hideHiddenProducts, setHideHiddenProducts] = useState(false);
+    const [csvFile, setCsvFile] = useState(null);
+    const [showCsvImport, setShowCsvImport] = useState(false);
+    const [csvImporting, setCsvImporting] = useState(false);
+    const [csvImportResult, setCsvImportResult] = useState(null);
 
     const formatGMT8Time = (date) => {
         const options = {
@@ -248,6 +252,74 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
 
     const handleSearch = () => {
         fetchProducts();
+    };
+
+    const handleCsvFileChange = (e) => {
+        const file = e.target.files[0];
+        setCsvFile(file);
+        setCsvImportResult(null);
+    };
+
+    const handleCsvImport = async (e) => {
+        e.preventDefault();
+        if (!csvFile) {
+            alert('Please select a CSV file');
+            return;
+        }
+
+        setCsvImporting(true);
+        setCsvImportResult(null);
+        setErrors({});
+
+        try {
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            const formData = new FormData();
+            formData.append('csv_file', csvFile);
+
+            const response = await fetch('/api/products/import/csv', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${auth.token}`,
+                    'X-CSRF-TOKEN': token
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                setCsvImportResult({
+                    success: true,
+                    message: result.message,
+                    imported: result.imported,
+                    skipped: result.skipped,
+                    errors: result.errors
+                });
+                setSuccess(`CSV import completed! Imported: ${result.imported}, Skipped: ${result.skipped}`);
+                setCsvFile(null);
+                // Reset file input
+                const fileInput = document.querySelector('input[type="file"][accept=".csv"]');
+                if (fileInput) fileInput.value = '';
+                // Refresh products list
+                fetchProducts();
+            } else {
+                setCsvImportResult({
+                    success: false,
+                    message: result.message || 'Import failed',
+                    errors: result.errors
+                });
+                setErrors(result.errors || {});
+            }
+        } catch (err) {
+            setCsvImportResult({
+                success: false,
+                message: 'An error occurred during import',
+                errors: {}
+            });
+            setError('An error occurred during CSV import');
+        } finally {
+            setCsvImporting(false);
+        }
     };
 
     const addNewProduct = async (e) => {
@@ -585,18 +657,119 @@ export default function Spreadsheet({ auth, lastEditTime: initialLastEditTime })
                         </div>
                     )}
 
+                    {/* CSV Import Section */}
+                    {showCsvImport && (
+                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                            <div className="p-6">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-medium text-gray-900">Import Products from CSV</h3>
+                                    <button
+                                        onClick={() => {
+                                            setShowCsvImport(false);
+                                            setCsvImportResult(null);
+                                            setCsvFile(null);
+                                        }}
+                                        className="text-gray-500 hover:text-gray-700"
+                                    >
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <h4 className="font-medium text-blue-900 mb-2">CSV Format Requirements:</h4>
+                                    <ul className="text-sm text-blue-800 space-y-1">
+                                        <li>• Required columns: <code className="bg-white px-1 rounded">product_code</code>, <code className="bg-white px-1 rounded">name</code>, <code className="bg-white px-1 rounded">price</code>, <code className="bg-white px-1 rounded">quantity</code></li>
+                                        <li>• Optional columns: <code className="bg-white px-1 rounded">description</code>, <code className="bg-white px-1 rounded">image_url</code></li>
+                                        <li>• The <code className="bg-white px-1 rounded">id</code> column will be ignored - IDs are assigned by the server</li>
+                                        <li>• Existing products (matching product_code) will be updated</li>
+                                        <li>• New products will be created automatically</li>
+                                    </ul>
+                                </div>
+
+                                <form onSubmit={handleCsvImport}>
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Select CSV File
+                                        </label>
+                                        <input
+                                            type="file"
+                                            accept=".csv"
+                                            onChange={handleCsvFileChange}
+                                            className="w-full p-2 border border-gray-300 rounded"
+                                            required
+                                        />
+                                        {errors.csv_file && (
+                                            <p className="text-red-500 text-sm mt-1">{errors.csv_file[0]}</p>
+                                        )}
+                                    </div>
+
+                                    {csvImportResult && (
+                                        <div className={`mb-4 p-4 rounded-lg ${csvImportResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                                            <p className={`font-medium ${csvImportResult.success ? 'text-green-900' : 'text-red-900'}`}>
+                                                {csvImportResult.message}
+                                            </p>
+                                            {csvImportResult.errors && csvImportResult.errors.length > 0 && (
+                                                <div className="mt-2">
+                                                    <p className="text-sm font-medium text-red-800">Errors:</p>
+                                                    <ul className="text-sm text-red-700 mt-1 space-y-1">
+                                                        {csvImportResult.errors.map((error, index) => (
+                                                            <li key={index}>• {error}</li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <div className="flex justify-end space-x-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setShowCsvImport(false);
+                                                setCsvImportResult(null);
+                                                setCsvFile(null);
+                                            }}
+                                            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <PrimaryButton type="submit" disabled={csvImporting}>
+                                            {csvImporting ? 'Importing...' : 'Import CSV'}
+                                        </PrimaryButton>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Products Table */}
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6">
                             {/* Header with Add Product Button */}
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-lg font-medium text-gray-900">Products</h3>
-                                <button
-                                    onClick={() => setShowAddForm(!showAddForm)}
-                                    className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-                                >
-                                    {showAddForm ? 'Cancel' : 'Add Product'}
-                                </button>
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={() => {
+                                            setShowCsvImport(!showCsvImport);
+                                            setShowAddForm(false);
+                                        }}
+                                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                                    >
+                                        {showCsvImport ? 'Cancel' : 'Import CSV'}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowAddForm(!showAddForm);
+                                            setShowCsvImport(false);
+                                        }}
+                                        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                                    >
+                                        {showAddForm ? 'Cancel' : 'Add Product'}
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Last Edit Timestamp */}

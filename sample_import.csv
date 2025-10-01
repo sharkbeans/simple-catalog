@@ -1,0 +1,4 @@
+product_code,name,description,price,quantity,image_url
+TEST001,Test Product 1 Updated,This is an updated test product,129.99,75,https://picsum.photos/seed/test1/200/300
+TEST002,Test Product 2,Another test product,149.50,25,https://picsum.photos/seed/test2/200/300
+TEST004,New Test Product 4,A brand new product,299.00,10,https://picsum.photos/seed/test4/200/300
