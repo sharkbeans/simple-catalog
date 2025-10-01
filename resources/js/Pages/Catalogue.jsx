@@ -7,6 +7,7 @@ export default function Catalogue({ auth, products = [], filters = {} }) {
     const [editingProduct, setEditingProduct] = useState(null);
     const [editData, setEditData] = useState({});
     const [editImageFile, setEditImageFile] = useState(null);
+    const [fileInputKey, setFileInputKey] = useState(Date.now());
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [sortBy, setSortBy] = useState(filters.sort || 'created_at');
     const [sortDirection, setSortDirection] = useState(filters.direction || 'desc');
@@ -81,12 +82,14 @@ export default function Catalogue({ auth, products = [], filters = {} }) {
             image_url: product.image_url || ''
         });
         setEditImageFile(null);
+        setFileInputKey(Date.now());
     };
 
     const cancelEdit = () => {
         setEditingProduct(null);
         setEditData({});
         setEditImageFile(null);
+        setFileInputKey(Date.now());
     };
 
     const saveEdit = async (productId) => {
@@ -142,6 +145,7 @@ export default function Catalogue({ auth, products = [], filters = {} }) {
                 setEditingProduct(null);
                 setEditData({});
                 setEditImageFile(null);
+                setFileInputKey(Date.now());
                 // Refresh the page to get updated product list
                 router.reload();
             } else {
@@ -161,7 +165,12 @@ export default function Catalogue({ auth, products = [], filters = {} }) {
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
-        setEditImageFile(file);
+        if (file) {
+            console.log('File selected:', file.name, file.size, file.type);
+            setEditImageFile(file);
+        } else {
+            console.log('No file selected');
+        }
     };
 
 
@@ -328,14 +337,15 @@ export default function Catalogue({ auth, products = [], filters = {} }) {
                                                         Product Image
                                                     </label>
                                                     <input
+                                                        key={fileInputKey}
                                                         type="file"
                                                         accept="image/*"
                                                         onChange={handleImageChange}
                                                         className="w-full p-2 border border-gray-300 rounded text-sm"
                                                     />
                                                     {editImageFile && (
-                                                        <p className="text-sm text-gray-600 mt-1">
-                                                            Selected: {editImageFile.name}
+                                                        <p className="text-sm text-green-600 mt-1">
+                                                            ✓ Selected: {editImageFile.name}
                                                         </p>
                                                     )}
                                                     {!editImageFile && editData.image_url && (
@@ -362,6 +372,7 @@ export default function Catalogue({ auth, products = [], filters = {} }) {
                                         ) : (
                                             // View mode
                                             <div className="flex flex-col flex-grow">
+                                                <div className="text-xs text-gray-500 mb-1">{product.product_code}</div>
                                                 <h3 className="font-semibold text-sm sm:text-lg text-gray-900 mb-1 sm:mb-2 overflow-hidden">{product.name}</h3>
                                                 <div className="flex-grow mb-1 sm:mb-2 min-h-[2rem] sm:min-h-[2.5rem]">
                                                     {product.description && (

@@ -13,6 +13,9 @@ Route::get('/products/{product}', [App\Http\Controllers\PublicProductController:
 Route::get('/cart', [App\Http\Controllers\PublicProductController::class, 'cart'])->name('cart');
 Route::get('/contact', fn() => Inertia::render('Contact'))->name('contact');
 
+// Public API route to get WhatsApp phone
+Route::get('/api/settings/whatsapp-phone', [App\Http\Controllers\SettingController::class, 'getWhatsappPhone']);
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', function () {
         $products = \App\Models\Product::all();
@@ -59,6 +62,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/whatsapp', [ProfileController::class, 'updateWhatsApp'])->name('profile.whatsapp.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 

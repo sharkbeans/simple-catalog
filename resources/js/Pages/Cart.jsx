@@ -7,12 +7,25 @@ export default function Cart() {
     const [cartItems, setCartItems] = useState([]);
     const [total, setTotal] = useState(0);
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [whatsappPhone, setWhatsappPhone] = useState('+601112056867');
 
     useEffect(() => {
         // Load cart from localStorage
         const savedCart = JSON.parse(localStorage.getItem('cart') || '[]');
         setCartItems(savedCart);
         calculateTotal(savedCart);
+    }, []);
+
+    // Fetch WhatsApp phone number
+    useEffect(() => {
+        fetch('/api/settings/whatsapp-phone')
+            .then(res => res.json())
+            .then(data => {
+                setWhatsappPhone(data.whatsapp_url_format);
+            })
+            .catch(err => {
+                console.error('Failed to fetch WhatsApp phone:', err);
+            });
     }, []);
 
     const calculateTotal = (items) => {
@@ -66,7 +79,9 @@ export default function Cart() {
         let copyText = 'Product Order\n\n';
         
         cartItems.forEach((item, index) => {
-            copyText += `Item ${index + 1}: ${item.name}\n`;
+            copyText += `Item ${index + 1}\n`;
+            copyText += `Code: ${item.product_code}\n`;
+            copyText += `${item.name}\n`;
             copyText += `Qty: ${item.quantity}\n`;
             copyText += `Price: RM${(item.price * item.quantity).toFixed(2)}\n\n`;
         });
@@ -100,9 +115,8 @@ export default function Cart() {
 
         // Encode the message for URL
         const encodedMessage = encodeURIComponent(message);
-        const phoneNumber = '+60124408720';
-        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-        
+        const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodedMessage}`;
+
         // Open WhatsApp
         window.open(whatsappUrl, '_blank');
     };
@@ -198,7 +212,7 @@ export default function Cart() {
                                                     )}
                                                     <div className="flex-1 min-w-0">
                                                         <h3 className="text-sm font-medium text-gray-900 leading-tight mb-1">{item.name}</h3>
-                                                        <p className="text-xs text-gray-600 mb-1">ID: {item.id}</p>
+                                                        <p className="text-xs text-gray-600 mb-1">{item.product_code}</p>
                                                         <p className="text-base font-semibold text-green-600 mb-1">RM{item.price}</p>
                                                         {item.maxStock && (
                                                             <p className="text-xs text-gray-500">Stock: {item.maxStock} available</p>
@@ -225,7 +239,7 @@ export default function Cart() {
                                                     {/* Product Info Column - Flexible width */}
                                                     <div className="flex-1 min-w-0 pr-6">
                                                         <h3 className="text-lg font-medium text-gray-900 truncate">{item.name}</h3>
-                                                        <p className="text-sm text-gray-600">ID: {item.id}</p>
+                                                        <p className="text-sm text-gray-600">{item.product_code}</p>
                                                         <p className="text-lg font-semibold text-green-600">RM{item.price}</p>
                                                         {item.maxStock && (
                                                             <p className="text-sm text-gray-500">Stock: {item.maxStock} available</p>

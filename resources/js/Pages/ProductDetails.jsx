@@ -8,6 +8,7 @@ export default function ProductDetails({ product }) {
     const [addedToCart, setAddedToCart] = useState(false);
     const [cartQuantity, setCartQuantity] = useState(0);
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [whatsappPhone, setWhatsappPhone] = useState('+601112056867');
 
     // Check current cart quantity on component mount
     React.useEffect(() => {
@@ -17,6 +18,18 @@ export default function ProductDetails({ product }) {
             setCartQuantity(existingItem.quantity);
         }
     }, [product.id]);
+
+    // Fetch WhatsApp phone number
+    React.useEffect(() => {
+        fetch('/api/settings/whatsapp-phone')
+            .then(res => res.json())
+            .then(data => {
+                setWhatsappPhone(data.whatsapp_url_format);
+            })
+            .catch(err => {
+                console.error('Failed to fetch WhatsApp phone:', err);
+            });
+    }, []);
 
     const addToCart = () => {
         // Validate quantity before adding
@@ -85,8 +98,7 @@ export default function ProductDetails({ product }) {
         const message = `Product Order\n\n1. [${product.product_code}] ${product.name} - RM${product.price} x ${finalQuantity} = RM${(product.price * finalQuantity).toFixed(2)}\n\nOrder Total: RM${(product.price * finalQuantity).toFixed(2)}\nPlease provide an invoice. Thank you!`;
 
         const encodedMessage = encodeURIComponent(message);
-        const phoneNumber = '+60123456000';
-        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+        const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodedMessage}`;
 
         window.open(whatsappUrl, '_blank');
     };
