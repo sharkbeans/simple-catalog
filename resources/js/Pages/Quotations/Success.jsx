@@ -77,10 +77,10 @@ export default function QuotationSuccess({ quotation }) {
                                 </div>
                             </div>
 
-                            {/* Download Button */}
+                            {/* View Quotation Button */}
                             <div className="mb-6">
-                                <a
-                                    href={`/quotations/${quotation.id}/download`}
+                                <Link
+                                    href={`/quotations/${quotation.access_token}/view`}
                                     className="inline-flex items-center px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition-colors"
                                 >
                                     <svg
@@ -93,11 +93,17 @@ export default function QuotationSuccess({ quotation }) {
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
                                             strokeWidth={2}
-                                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                        />
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                                         />
                                     </svg>
-                                    Download PDF
-                                </a>
+                                    View & Print Quotation
+                                </Link>
                             </div>
 
                             {/* Action Buttons */}
@@ -119,8 +125,8 @@ export default function QuotationSuccess({ quotation }) {
                             {/* Info Note */}
                             <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                                 <p className="text-sm text-blue-800">
-                                    <strong>Note:</strong> Please download your quotation PDF now.
-                                    You can also contact us if you need any modifications to this quotation.
+                                    <strong>Note:</strong> You can view and print your quotation using your browser's print function (Ctrl+P or Cmd+P).
+                                    Contact us if you need any modifications to this quotation.
                                 </p>
                             </div>
                         </div>

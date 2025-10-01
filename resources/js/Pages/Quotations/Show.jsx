@@ -46,13 +46,13 @@ export default function ShowQuotation({ quotation }) {
                                 >
                                     Edit
                                 </Link>
-                                <a
-                                    href={`/quotations/${quotation.id}/download`}
-                                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md"
+                                <Link
+                                    href={`/quotations/${quotation.access_token}/view`}
+                                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md"
                                     target="_blank"
                                 >
-                                    Download PDF
-                                </a>
+                                    View & Print
+                                </Link>
                                 <button
                                     onClick={handleDelete}
                                     className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md ml-auto"

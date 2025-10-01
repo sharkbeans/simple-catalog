@@ -122,78 +122,11 @@ class QuotationController extends Controller
             ->with('success', 'Quotation deleted successfully!');
     }
 
-    public function download(Quotation $quotation)
+    public function view(Quotation $quotation)
     {
-        require_once public_path('quolib/quotr.php');
-
-        global $quotr;
-        $quotr->reset();
-
-        // Set company information (should be configurable in settings)
-        $quotr->set('company', [
-            url('/logo.png'),
-            public_path('logo.png'),
-            config('app.name', 'Simple Catalog'),
-            'Your Company Address',
-            'Phone: xxx-xxx-xxx',
-            url('/'),
-            'info@example.com'
+        return Inertia::render('Quotations/View', [
+            'quotation' => $quotation
         ]);
-
-        // Set quotation header
-        $quotr->set('head', [
-            ['QUOTATION #', $quotation->quotation_number],
-            ['Valid From', $quotation->valid_from->format('Y-m-d')],
-            ['Valid Till', $quotation->valid_till->format('Y-m-d')],
-        ]);
-
-        // Set customer
-        $customerInfo = [$quotation->customer_name];
-        if ($quotation->customer_address) {
-            $customerInfo[] = $quotation->customer_address;
-        }
-        if ($quotation->customer_contact) {
-            $customerInfo[] = $quotation->customer_contact;
-        }
-        $quotr->set('customer', $customerInfo);
-
-        // Set items
-        $items = [];
-        foreach ($quotation->items as $item) {
-            $items[] = [
-                $item['name'],
-                $item['description'] ?? '',
-                $item['quantity'],
-                'RM' . number_format($item['price'], 2),
-                'RM' . number_format($item['total'], 2)
-            ];
-        }
-        $quotr->set('items', $items);
-
-        // Set totals
-        $totals = [
-            ['SUB-TOTAL', 'RM' . number_format($quotation->subtotal, 2)]
-        ];
-        if ($quotation->tax > 0) {
-            $totals[] = ['TAX', 'RM' . number_format($quotation->tax, 2)];
-        }
-        $totals[] = ['GRAND TOTAL', 'RM' . number_format($quotation->total, 2)];
-        $quotr->set('totals', $totals);
-
-        // Set notes if any
-        if ($quotation->notes) {
-            $quotr->set('notes', explode("\n", $quotation->notes));
-        }
-
-        // Set acceptance
-        $quotr->set('accept', true);
-
-        // Use simple template (only PDF supported)
-        $quotr->template('simple');
-
-        // Output PDF
-        $filename = str_replace(['/', ' '], '_', $quotation->quotation_number);
-        $quotr->outputPDF(2, "{$filename}.pdf");
     }
 
     public function createFromCart(Request $request)

@@ -67,6 +67,12 @@ export default function AuthenticatedLayout({ header, children }) {
                                     Audit Logs
                                 </NavLink>
                                 <NavLink
+                                    href={route('quotations.index')}
+                                    active={route().current('quotations.index')}
+                                >
+                                    Quotations
+                                </NavLink>
+                                <NavLink
                                     href="/"
                                     className="text-blue-600 hover:text-blue-800"
                                 >
@@ -193,6 +199,12 @@ export default function AuthenticatedLayout({ header, children }) {
                             active={route().current('audit.logs')}
                         >
                             Audit Logs
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            href={route('quotations.index')}
+                            active={route().current('quotations.index')}
+                        >
+                            Quotations
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
                             href="/"

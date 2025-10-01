@@ -4,11 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 class Quotation extends Model
 {
     protected $fillable = [
         'quotation_number',
+        'access_token',
         'user_id',
         'customer_name',
         'customer_address',
@@ -31,6 +33,15 @@ class Quotation extends Model
         'tax' => 'decimal:2',
         'total' => 'decimal:2',
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($quotation) {
+            if (empty($quotation->access_token)) {
+                $quotation->access_token = self::generateAccessToken();
+            }
+        });
+    }
 
     public function user(): BelongsTo
     {
@@ -56,5 +67,10 @@ class Quotation extends Model
         }
 
         return "{$prefix}-{$year}{$month}-{$newNumber}";
+    }
+
+    public static function generateAccessToken()
+    {
+        return Str::random(32);
     }
 }

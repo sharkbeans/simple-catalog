@@ -21,8 +21,8 @@ Route::get('/quotations/create', [App\Http\Controllers\QuotationController::clas
     ->name('quotations.create');
 Route::post('/quotations', [App\Http\Controllers\QuotationController::class, 'store'])
     ->name('quotations.store');
-Route::get('/quotations/{quotation}/download', [App\Http\Controllers\QuotationController::class, 'download'])
-    ->name('quotations.download');
+Route::get('/quotations/{quotation:access_token}/view', [App\Http\Controllers\QuotationController::class, 'view'])
+    ->name('quotations.view');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', function () {
