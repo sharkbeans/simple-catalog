@@ -1,0 +1,4 @@
+product_code,name,description,price,quantity,image_url
+TEST-001,Test Product 1,This is a test product for CSV import,19.99,100,https://picsum.photos/seed/test1/200/300
+TEST-002,Test Product 2,Another test product,29.99,50,https://picsum.photos/seed/test2/200/300
+TEST-003,Test Product 3,Third test product with longer description,39.99,75,https://picsum.photos/seed/test3/200/300
