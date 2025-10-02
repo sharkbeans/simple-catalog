@@ -23,8 +23,10 @@ Route::post('/quotations', [App\Http\Controllers\QuotationController::class, 'st
     ->name('quotations.store');
 Route::get('/quotations/{quotation:access_token}/view', [App\Http\Controllers\QuotationController::class, 'view'])
     ->name('quotations.view');
-Route::post('/quotations/{quotation:access_token}/approve', [App\Http\Controllers\QuotationController::class, 'approve'])
-    ->name('quotations.approve');
+Route::post('/quotations/{quotation:access_token}/customer-approve', [App\Http\Controllers\QuotationController::class, 'customerApprove'])
+    ->name('quotations.customer-approve');
+Route::post('/quotations/{quotation:access_token}/customer-reject', [App\Http\Controllers\QuotationController::class, 'customerReject'])
+    ->name('quotations.customer-reject');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', function () {
@@ -79,6 +81,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('quotations.update');
     Route::delete('/quotations/{quotation}', [App\Http\Controllers\QuotationController::class, 'destroy'])
         ->name('quotations.destroy');
+    Route::post('/quotations/{quotation}/approve', [App\Http\Controllers\QuotationController::class, 'approve'])
+        ->name('quotations.approve');
+    Route::post('/quotations/{quotation}/reject', [App\Http\Controllers\QuotationController::class, 'reject'])
+        ->name('quotations.reject');
+    Route::get('/quotations/{quotation}/send-whatsapp', [App\Http\Controllers\QuotationController::class, 'sendViaWhatsApp'])
+        ->name('quotations.send-whatsapp');
+    Route::put('/quotations/{quotation}/update-and-send', [App\Http\Controllers\QuotationController::class, 'updateAndSend'])
+        ->name('quotations.update-and-send');
 });
 
 Route::middleware('auth')->group(function () {

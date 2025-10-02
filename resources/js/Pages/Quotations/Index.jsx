@@ -6,11 +6,25 @@ export default function QuotationsIndex({ quotations }) {
     const getStatusColor = (status) => {
         const colors = {
             draft: 'bg-gray-100 text-gray-800',
+            pending: 'bg-yellow-100 text-yellow-800',
+            approved: 'bg-green-100 text-green-800',
             sent: 'bg-blue-100 text-blue-800',
             accepted: 'bg-green-100 text-green-800',
             rejected: 'bg-red-100 text-red-800',
         };
         return colors[status] || 'bg-gray-100 text-gray-800';
+    };
+
+    const getStatusLabel = (status) => {
+        const labels = {
+            draft: 'Draft',
+            pending: 'Pending Review',
+            approved: 'Approved',
+            sent: 'Awaiting Customer Approval',
+            accepted: 'Accepted',
+            rejected: 'Rejected',
+        };
+        return labels[status] || status;
     };
 
     return (
@@ -102,7 +116,7 @@ export default function QuotationsIndex({ quotations }) {
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(quotation.status)}`}>
-                                                            {quotation.status}
+                                                            {getStatusLabel(quotation.status)}
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">

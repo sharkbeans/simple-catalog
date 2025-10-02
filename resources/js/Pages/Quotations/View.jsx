@@ -1,8 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 
 export default function ViewQuotation({ quotation, auth }) {
+    const [showApproveModal, setShowApproveModal] = useState(false);
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [rejectionReason, setRejectionReason] = useState('');
+    const { flash } = usePage().props;
+
     const handlePrint = () => {
         window.print();
     };
@@ -18,28 +23,60 @@ export default function ViewQuotation({ quotation, auth }) {
 
     const handleWhatsAppShare = () => {
         const link = window.location.href;
-        const message = `Hello ${quotation.customer_name},\n\nYour quotation ${quotation.quotation_number} is ready for review.\n\nTotal Amount: RM${parseFloat(quotation.total).toFixed(2)}\n\nPlease view and approve the quotation using this link:\n${link}\n\nThank you!`;
+        const message = `Hello ${quotation.customer_name},\n\nYour quotation ${quotation.quotation_number} is ready for review.\n\nTotal Amount: RM${parseFloat(quotation.total).toFixed(2)}\n\nView your quotation here:\n${link}\n\nThank you!`;
 
         const whatsappUrl = `https://wa.me/${quotation.customer_contact?.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
     };
 
-    const handleApprove = () => {
-        if (confirm('Are you sure you want to approve this quotation?')) {
-            router.post(`/quotations/${quotation.access_token}/approve`, {}, {
-                onSuccess: () => {
-                    alert('Quotation approved successfully!');
-                },
-                onError: () => {
-                    alert('Failed to approve quotation');
-                }
-            });
+    const handleCustomerApprove = () => {
+        router.post(`/quotations/${quotation.access_token}/customer-approve`, {}, {
+            onSuccess: () => {
+                setShowApproveModal(false);
+            }
+        });
+    };
+
+    const handleCustomerReject = () => {
+        if (!rejectionReason.trim()) {
+            alert('Please provide a reason for rejection');
+            return;
         }
+        router.post(`/quotations/${quotation.access_token}/customer-reject`, {
+            rejection_reason: rejectionReason
+        }, {
+            onSuccess: () => {
+                setShowRejectModal(false);
+                setRejectionReason('');
+            }
+        });
     };
 
     const isAdmin = auth?.user;
-    const isApproved = quotation.status === 'accepted';
-    const canApprove = !isApproved && !isAdmin;
+    const canCustomerApprove = !isAdmin && quotation.status === 'sent' && !quotation.customer_approved_at;
+    const getStatusColor = (status) => {
+        const colors = {
+            draft: 'bg-gray-100 text-gray-800',
+            pending: 'bg-yellow-100 text-yellow-800',
+            approved: 'bg-green-100 text-green-800',
+            sent: 'bg-blue-100 text-blue-800',
+            accepted: 'bg-green-100 text-green-800',
+            rejected: 'bg-red-100 text-red-800',
+        };
+        return colors[status] || 'bg-gray-100 text-gray-800';
+    };
+
+    const getStatusLabel = (status) => {
+        const labels = {
+            draft: 'Draft',
+            pending: 'Pending Review',
+            approved: 'Approved',
+            sent: 'Awaiting Customer Approval',
+            accepted: 'Accepted',
+            rejected: 'Rejected',
+        };
+        return labels[status] || status;
+    };
 
     return (
         <div className="min-h-screen bg-gray-100">
@@ -129,16 +166,16 @@ export default function ViewQuotation({ quotation, auth }) {
                                     <div className="text-right">
                                         <h2 className="text-2xl font-bold text-gray-900">QUOTATION</h2>
                                         <p className="text-lg font-semibold text-gray-700 mt-2">{quotation.quotation_number}</p>
-                                        {isApproved && (
-                                            <div className="mt-2">
-                                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
+                                        <div className="mt-2">
+                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(quotation.status)}`}>
+                                                {quotation.status === 'approved' || quotation.status === 'sent' ? (
                                                     <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
                                                     </svg>
-                                                    Approved
-                                                </span>
-                                            </div>
-                                        )}
+                                                ) : null}
+                                                {getStatusLabel(quotation.status)}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -237,23 +274,94 @@ export default function ViewQuotation({ quotation, auth }) {
                         </div>
                     </div>
 
-                    {/* Approval Section for Customers - Hidden when printing */}
-                    {canApprove && (
+                    {/* Flash Messages */}
+                    {flash?.success && (
+                        <div className="mt-8 mb-6 p-6 bg-green-50 border-2 border-green-200 rounded-lg print:hidden">
+                            <div className="text-center">
+                                <h3 className="text-xl font-semibold text-green-900 mb-2">Success!</h3>
+                                <p className="text-green-700">{flash.success}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {flash?.error && (
+                        <div className="mt-8 mb-6 p-6 bg-red-50 border-2 border-red-200 rounded-lg print:hidden">
+                            <div className="text-center">
+                                <h3 className="text-xl font-semibold text-red-900 mb-2">Error</h3>
+                                <p className="text-red-700">{flash.error}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Status Message for Customers - Hidden when printing */}
+                    {!isAdmin && quotation.status === 'pending' && (
+                        <div className="mt-8 mb-6 p-6 bg-yellow-50 border-2 border-yellow-200 rounded-lg print:hidden">
+                            <div className="text-center">
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">Quotation Under Review</h3>
+                                <p className="text-gray-600">
+                                    Thank you for your quotation request. We are currently reviewing your request and will send you the approved quotation soon.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Customer Approval Section */}
+                    {canCustomerApprove && (
                         <div className="mt-8 mb-6 p-6 bg-blue-50 border-2 border-blue-200 rounded-lg print:hidden">
                             <div className="text-center">
-                                <h3 className="text-xl font-semibold text-gray-900 mb-2">Approve this Quotation</h3>
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">Review and Respond to Quotation</h3>
                                 <p className="text-gray-600 mb-4">
-                                    Please review the quotation details above and approve if everything is correct.
+                                    Please review the quotation details above. You can approve if everything looks correct, or request changes if needed.
                                 </p>
-                                <button
-                                    onClick={handleApprove}
-                                    className="inline-flex items-center px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-lg transition-colors"
-                                >
-                                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                                    </svg>
-                                    Approve Quotation
-                                </button>
+                                {quotation.amended_at && quotation.original_values && (
+                                    <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm">
+                                        <p className="font-semibold text-yellow-800">This quotation has been updated</p>
+                                        <p className="text-yellow-700">Previous total: RM{parseFloat(quotation.original_values.total).toFixed(2)}</p>
+                                        <p className="text-yellow-700">New total: RM{parseFloat(quotation.total).toFixed(2)}</p>
+                                    </div>
+                                )}
+                                <div className="flex gap-3 justify-center">
+                                    <button
+                                        onClick={() => setShowApproveModal(true)}
+                                        className="inline-flex items-center px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-lg transition-colors"
+                                    >
+                                        <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                                        </svg>
+                                        Approve
+                                    </button>
+                                    <button
+                                        onClick={() => setShowRejectModal(true)}
+                                        className="inline-flex items-center px-8 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-lg transition-colors"
+                                    >
+                                        <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
+                                        </svg>
+                                        Request Changes
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {!isAdmin && quotation.status === 'accepted' && (
+                        <div className="mt-8 mb-6 p-6 bg-green-50 border-2 border-green-200 rounded-lg print:hidden">
+                            <div className="text-center">
+                                <h3 className="text-xl font-semibold text-green-900 mb-2">Quotation Approved</h3>
+                                <p className="text-green-700">
+                                    You have approved this quotation on {new Date(quotation.customer_approved_at).toLocaleString()}. Thank you for your business!
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {!isAdmin && quotation.status === 'rejected' && (
+                        <div className="mt-8 mb-6 p-6 bg-red-50 border-2 border-red-200 rounded-lg print:hidden">
+                            <div className="text-center">
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">Quotation Request Not Approved</h3>
+                                <p className="text-gray-600">
+                                    We're sorry, but we were unable to approve this quotation request at this time. Please contact us for more information.
+                                </p>
                             </div>
                         </div>
                     )}
@@ -322,6 +430,90 @@ export default function ViewQuotation({ quotation, auth }) {
                     </div>
                 </div>
             </div>
+
+            {/* Customer Approval Modal */}
+            {showApproveModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 print:hidden">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                        <h3 className="text-lg font-semibold mb-4">Approve Quotation</h3>
+                        <p className="text-gray-600 mb-4">
+                            By clicking "I Approve", you confirm that you have reviewed the quotation and agree to the terms and pricing specified.
+                        </p>
+                        <div className="bg-gray-50 p-4 rounded mb-4">
+                            <div className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                    <span className="font-medium">Quotation Number:</span>
+                                    <span>{quotation.quotation_number}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="font-medium">Total Amount:</span>
+                                    <span className="text-green-600 font-bold">RM{parseFloat(quotation.total).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="font-medium">Valid Until:</span>
+                                    <span>{new Date(quotation.valid_till).toLocaleDateString()}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <button
+                                onClick={() => setShowApproveModal(false)}
+                                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleCustomerApprove}
+                                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"
+                            >
+                                I Approve
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Customer Reject Modal */}
+            {showRejectModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 print:hidden">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                        <h3 className="text-lg font-semibold mb-4">Request Changes</h3>
+                        <p className="text-gray-600 mb-4">
+                            Please let us know what changes you would like to see in this quotation. We will review your request and get back to you.
+                        </p>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                What would you like us to change? *
+                            </label>
+                            <textarea
+                                value={rejectionReason}
+                                onChange={(e) => setRejectionReason(e.target.value)}
+                                className="w-full border-gray-300 rounded-md shadow-sm"
+                                rows="4"
+                                placeholder="Please describe the changes you need..."
+                                required
+                            />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <button
+                                onClick={() => {
+                                    setShowRejectModal(false);
+                                    setRejectionReason('');
+                                }}
+                                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleCustomerReject}
+                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md"
+                            >
+                                Submit Request
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Print Styles */}
             <style>{`
