@@ -2,10 +2,10 @@ import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 
-export default function QuotationSuccess({ quotation }) {
+export default function QuotationSuccess({ quotation, message }) {
     return (
         <div className="min-h-screen bg-gray-100">
-            <Head title="Quotation Created Successfully" />
+            <Head title="Quotation Request Submitted" />
 
             {/* Navigation */}
             <nav className="border-b border-gray-100 bg-white">
@@ -43,11 +43,15 @@ export default function QuotationSuccess({ quotation }) {
 
                             {/* Success Message */}
                             <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                                Quotation Created Successfully!
+                                Quotation Request Submitted!
                             </h1>
 
-                            <p className="text-lg text-gray-600 mb-8">
-                                Your quotation <span className="font-semibold text-gray-900">{quotation.quotation_number}</span> has been created.
+                            <p className="text-lg text-gray-600 mb-2">
+                                Your quotation request <span className="font-semibold text-gray-900">{quotation.quotation_number}</span> has been submitted successfully.
+                            </p>
+
+                            <p className="text-md text-gray-500 mb-8">
+                                {message || 'We will review your request and send you the approved quotation soon.'}
                             </p>
 
                             {/* Quotation Details */}
@@ -77,7 +81,24 @@ export default function QuotationSuccess({ quotation }) {
                                 </div>
                             </div>
 
-                            {/* View Quotation Button */}
+                            {/* Info Box */}
+                            <div className="mb-6 p-6 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                                <div className="flex items-start">
+                                    <svg className="w-6 h-6 text-blue-500 mr-3 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
+                                    </svg>
+                                    <div className="text-left">
+                                        <h3 className="font-semibold text-gray-900 mb-2">What happens next?</h3>
+                                        <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
+                                            <li>Our team will review your quotation request</li>
+                                            <li>You'll receive the approved quotation via WhatsApp{quotation.customer_email ? ' or email' : ''}</li>
+                                            <li>The quotation will include a link to view and download the PDF</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* View Request Button */}
                             <div className="mb-6">
                                 <Link
                                     href={`/quotations/${quotation.access_token}/view`}
@@ -102,7 +123,7 @@ export default function QuotationSuccess({ quotation }) {
                                             d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                                         />
                                     </svg>
-                                    View & Print Quotation
+                                    View Your Request
                                 </Link>
                             </div>
 
@@ -122,11 +143,10 @@ export default function QuotationSuccess({ quotation }) {
                                 </Link>
                             </div>
 
-                            {/* Info Note */}
-                            <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                <p className="text-sm text-blue-800">
-                                    <strong>Note:</strong> You can view and print your quotation using your browser's print function (Ctrl+P or Cmd+P).
-                                    Contact us if you need any modifications to this quotation.
+                            {/* Contact Note */}
+                            <div className="mt-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                <p className="text-sm text-gray-600">
+                                    <strong>Need changes?</strong> Contact us if you need any modifications to your quotation request.
                                 </p>
                             </div>
                         </div>

@@ -8,6 +8,7 @@ export default function CreateQuotation({ cartItems = [] }) {
         customer_name: '',
         customer_address: '',
         customer_contact: '',
+        customer_email: '',
         valid_from: new Date().toISOString().split('T')[0],
         valid_till: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         items: [],
@@ -156,13 +157,26 @@ export default function CreateQuotation({ cartItems = [] }) {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Contact
+                                            Contact Number
                                         </label>
                                         <input
                                             type="text"
                                             value={formData.customer_contact}
                                             onChange={(e) => setFormData({ ...formData, customer_contact: e.target.value })}
                                             className="w-full border-gray-300 rounded-md shadow-sm"
+                                            placeholder="+60123456789"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Email
+                                        </label>
+                                        <input
+                                            type="email"
+                                            value={formData.customer_email}
+                                            onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
+                                            className="w-full border-gray-300 rounded-md shadow-sm"
+                                            placeholder="customer@example.com"
                                         />
                                     </div>
                                     <div className="md:col-span-2">

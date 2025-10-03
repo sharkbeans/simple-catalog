@@ -15,6 +15,7 @@ class Quotation extends Model
         'customer_name',
         'customer_address',
         'customer_contact',
+        'customer_email',
         'valid_from',
         'valid_till',
         'items',
@@ -22,11 +23,21 @@ class Quotation extends Model
         'tax',
         'total',
         'notes',
+        'admin_notes',
         'status',
+        'reviewed_by',
+        'reviewed_at',
+        'amended_at',
+        'original_values',
+        'customer_approved_at',
+        'customer_responded_at',
+        'customer_rejection_reason',
+        'customer_ip',
     ];
 
     protected $casts = [
         'items' => 'array',
+        'original_values' => 'array',
         'valid_from' => 'date',
         'valid_till' => 'date',
         'subtotal' => 'decimal:2',
@@ -46,6 +57,11 @@ class Quotation extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
     }
 
     public static function generateQuotationNumber()
