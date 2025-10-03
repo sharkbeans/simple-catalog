@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
 export default function EditQuotation({ quotation }) {
+    const { flash } = usePage().props;
     const [formData, setFormData] = useState({
         customer_name: quotation.customer_name || '',
+        customer_company: quotation.customer_company || '',
         customer_address: quotation.customer_address || '',
+        delivery_address: quotation.delivery_address || '',
         customer_contact: quotation.customer_contact || '',
         customer_email: quotation.customer_email || '',
         valid_from: quotation.valid_from ? new Date(quotation.valid_from).toISOString().split('T')[0] : '',
@@ -13,10 +16,16 @@ export default function EditQuotation({ quotation }) {
         items: quotation.items || [],
         subtotal: quotation.subtotal || 0,
         tax: quotation.tax || 0,
+        discount_type: quotation.discount_type || '',
+        discount_value: quotation.discount_value || 0,
+        discount_amount: quotation.discount_amount || 0,
+        shipping_charges: quotation.shipping_charges || 0,
+        handling_charges: quotation.handling_charges || 0,
         total: quotation.total || 0,
         notes: quotation.notes || '',
         admin_notes: quotation.admin_notes || '',
         status: quotation.status || 'draft',
+        priority: quotation.priority || 'medium',
     });
 
     const [errors, setErrors] = useState({});
@@ -30,14 +39,35 @@ export default function EditQuotation({ quotation }) {
         }
     }, []);
 
-    const calculateTotals = (newTaxRate) => {
+    // Handle WhatsApp redirect after update
+    useEffect(() => {
+        if (flash?.whatsappUrl) {
+            // Open WhatsApp in a new window
+            window.open(flash.whatsappUrl, '_blank');
+        }
+    }, [flash]);
+
+    const calculateTotals = (currentTaxRate) => {
         const subtotal = formData.items.reduce((sum, item) => sum + parseFloat(item.total || 0), 0);
-        const tax = subtotal * (parseFloat(newTaxRate) / 100);
-        const total = subtotal + tax;
+
+        // Calculate discount
+        let discountAmount = 0;
+        if (formData.discount_type === 'percentage') {
+            discountAmount = subtotal * (parseFloat(formData.discount_value) / 100);
+        } else if (formData.discount_type === 'fixed') {
+            discountAmount = parseFloat(formData.discount_value);
+        }
+
+        const subtotalAfterDiscount = subtotal - discountAmount;
+        const tax = subtotalAfterDiscount * (parseFloat(currentTaxRate) / 100);
+        const shipping = parseFloat(formData.shipping_charges) || 0;
+        const handling = parseFloat(formData.handling_charges) || 0;
+        const total = subtotalAfterDiscount + tax + shipping + handling;
 
         setFormData(prev => ({
             ...prev,
             subtotal: subtotal.toFixed(2),
+            discount_amount: discountAmount.toFixed(2),
             tax: tax.toFixed(2),
             total: total.toFixed(2)
         }));
@@ -47,6 +77,23 @@ export default function EditQuotation({ quotation }) {
         const newTaxRate = parseFloat(e.target.value) || 0;
         setTaxRate(newTaxRate);
         calculateTotals(newTaxRate);
+    };
+
+    const handleDiscountChange = (type, value) => {
+        const newFormData = { ...formData };
+        if (type) newFormData.discount_type = type;
+        if (value !== undefined) newFormData.discount_value = value;
+        setFormData(newFormData);
+
+        setTimeout(() => calculateTotals(taxRate), 0);
+    };
+
+    const handleChargeChange = (field, value) => {
+        setFormData(prev => ({
+            ...prev,
+            [field]: value
+        }));
+        setTimeout(() => calculateTotals(taxRate), 0);
     };
 
     const handleSubmit = (e) => {
@@ -77,10 +124,46 @@ export default function EditQuotation({ quotation }) {
         }
 
         if (confirm('Update this quotation and send it to the customer via WhatsApp?')) {
-            router.put(`/quotations/${quotation.id}/update-and-send`, formData, {
+            // Use visit with method PUT to allow external redirects
+            router.visit(`/quotations/${quotation.id}/update-and-send`, {
+                method: 'put',
+                data: formData,
                 onError: (errors) => setErrors(errors),
+                preserveState: false,
+                preserveScroll: false,
             });
         }
+    };
+
+    const addItem = () => {
+        const newItem = {
+            name: '',
+            description: '',
+            quantity: 1,
+            price: 0,
+            total: 0
+        };
+        setFormData({ ...formData, items: [...formData.items, newItem] });
+    };
+
+    const removeItem = (index) => {
+        const newItems = formData.items.filter((_, i) => i !== index);
+        setFormData({ ...formData, items: newItems });
+        setTimeout(() => calculateTotals(taxRate), 0);
+    };
+
+    const updateItem = (index, field, value) => {
+        const newItems = [...formData.items];
+        newItems[index][field] = value;
+
+        if (field === 'quantity' || field === 'price') {
+            const qty = parseInt(newItems[index].quantity) || 0;
+            const price = parseFloat(newItems[index].price) || 0;
+            newItems[index].total = (qty * price).toFixed(2);
+        }
+
+        setFormData({ ...formData, items: newItems });
+        setTimeout(() => calculateTotals(taxRate), 0);
     };
 
     return (
@@ -121,6 +204,17 @@ export default function EditQuotation({ quotation }) {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Company Name
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formData.customer_company}
+                                            onChange={(e) => setFormData({ ...formData, customer_company: e.target.value })}
+                                            className="w-full border-gray-300 rounded-md shadow-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Contact Number
                                         </label>
                                         <input
@@ -143,13 +237,25 @@ export default function EditQuotation({ quotation }) {
                                     </div>
                                     <div className="md:col-span-2">
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Address
+                                            Billing Address
                                         </label>
                                         <textarea
                                             value={formData.customer_address}
                                             onChange={(e) => setFormData({ ...formData, customer_address: e.target.value })}
                                             className="w-full border-gray-300 rounded-md shadow-sm"
-                                            rows="3"
+                                            rows="2"
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Delivery Address
+                                        </label>
+                                        <textarea
+                                            value={formData.delivery_address}
+                                            onChange={(e) => setFormData({ ...formData, delivery_address: e.target.value })}
+                                            className="w-full border-gray-300 rounded-md shadow-sm"
+                                            rows="2"
+                                            placeholder="Leave blank if same as billing address"
                                         />
                                     </div>
                                 </div>
@@ -157,8 +263,8 @@ export default function EditQuotation({ quotation }) {
 
                             {/* Validity Dates and Status */}
                             <div className="mb-8">
-                                <h3 className="text-lg font-semibold mb-4">Validity Period & Status</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <h3 className="text-lg font-semibold mb-4">Validity Period, Status & Priority</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Valid From *
@@ -202,80 +308,235 @@ export default function EditQuotation({ quotation }) {
                                             <option value="rejected">Rejected</option>
                                         </select>
                                     </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Priority
+                                        </label>
+                                        <select
+                                            value={formData.priority}
+                                            onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                                            className="w-full border-gray-300 rounded-md shadow-sm"
+                                        >
+                                            <option value="low">Low</option>
+                                            <option value="medium">Medium</option>
+                                            <option value="high">High</option>
+                                            <option value="urgent">Urgent</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Items Display (Read-only) */}
+                            {/* Items Editor */}
                             <div className="mb-8">
-                                <h3 className="text-lg font-semibold mb-4">Items from Cart</h3>
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-semibold">Quotation Items</h3>
+                                    <button
+                                        type="button"
+                                        onClick={addItem}
+                                        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md text-sm"
+                                    >
+                                        + Add Item
+                                    </button>
+                                </div>
 
                                 {formData.items.length === 0 ? (
                                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
                                         <p className="text-yellow-800 mb-4">No items in this quotation.</p>
-                                        <p className="text-sm text-yellow-600 mb-4">
-                                            To create a quotation, please add items to your cart first.
-                                        </p>
-                                        <Link
-                                            href="/cart"
-                                            className="inline-block bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-md"
+                                        <button
+                                            type="button"
+                                            onClick={addItem}
+                                            className="inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
                                         >
-                                            Go to Cart
-                                        </Link>
+                                            Add First Item
+                                        </button>
                                     </div>
                                 ) : (
-                                    <div className="overflow-x-auto">
-                                        <table className="min-w-full divide-y divide-gray-200">
-                                            <thead className="bg-gray-50">
-                                                <tr>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
-                                                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Qty</th>
-                                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Price</th>
-                                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="bg-white divide-y divide-gray-200">
-                                                {formData.items.map((item, index) => (
-                                                    <tr key={index}>
-                                                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{item.name}</td>
-                                                        <td className="px-4 py-3 text-sm text-gray-500">{item.description || '-'}</td>
-                                                        <td className="px-4 py-3 text-sm text-center text-gray-900">{item.quantity}</td>
-                                                        <td className="px-4 py-3 text-sm text-right text-gray-900">RM{parseFloat(item.price).toFixed(2)}</td>
-                                                        <td className="px-4 py-3 text-sm text-right font-medium text-gray-900">RM{parseFloat(item.total).toFixed(2)}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                    <div className="space-y-4">
+                                        {formData.items.map((item, index) => (
+                                            <div key={index} className="border border-gray-300 rounded-lg p-4 bg-gray-50">
+                                                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+                                                    <div className="md:col-span-4">
+                                                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                            Item Name *
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={item.name}
+                                                            onChange={(e) => updateItem(index, 'name', e.target.value)}
+                                                            className="w-full border-gray-300 rounded-md shadow-sm text-sm"
+                                                            placeholder="Product name"
+                                                            required
+                                                        />
+                                                    </div>
+
+                                                    <div className="md:col-span-3">
+                                                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                            Description/Code
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={item.description || ''}
+                                                            onChange={(e) => updateItem(index, 'description', e.target.value)}
+                                                            className="w-full border-gray-300 rounded-md shadow-sm text-sm"
+                                                            placeholder="Product code"
+                                                        />
+                                                    </div>
+
+                                                    <div className="md:col-span-1">
+                                                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                            Qty *
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            value={item.quantity}
+                                                            onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                                                            className="w-full border-gray-300 rounded-md shadow-sm text-sm"
+                                                            required
+                                                        />
+                                                    </div>
+
+                                                    <div className="md:col-span-2">
+                                                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                            Price (RM) *
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            step="0.01"
+                                                            value={item.price}
+                                                            onChange={(e) => updateItem(index, 'price', parseFloat(e.target.value) || 0)}
+                                                            className="w-full border-gray-300 rounded-md shadow-sm text-sm"
+                                                            required
+                                                        />
+                                                    </div>
+
+                                                    <div className="md:col-span-1">
+                                                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                            Total
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={`RM${parseFloat(item.total || 0).toFixed(2)}`}
+                                                            disabled
+                                                            className="w-full border-gray-300 rounded-md shadow-sm text-sm bg-gray-100 font-semibold"
+                                                        />
+                                                    </div>
+
+                                                    <div className="md:col-span-1 flex items-end">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeItem(index)}
+                                                            className="w-full bg-red-500 hover:bg-red-600 text-white px-2 py-2 rounded-md text-sm"
+                                                            title="Remove item"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
                             </div>
 
-                            {/* Totals */}
+                            {/* Totals and Charges */}
                             {formData.items.length > 0 && (
                                 <div className="mb-8">
-                                    <div className="max-w-md ml-auto bg-gray-50 p-6 rounded-lg">
+                                    <div className="max-w-md ml-auto bg-gray-50 p-6 rounded-lg space-y-4">
                                         <div className="space-y-2">
                                             <div className="flex justify-between">
                                                 <span>Subtotal:</span>
                                                 <span className="font-semibold">RM{formData.subtotal}</span>
                                             </div>
-                                            <div className="flex justify-between items-center">
-                                                <span>Tax (%):</span>
-                                                <input
-                                                    type="number"
-                                                    step="0.01"
-                                                    min="0"
-                                                    value={taxRate}
-                                                    onChange={handleTaxChange}
-                                                    className="w-20 border-gray-300 rounded-md shadow-sm text-sm"
-                                                />
-                                            </div>
-                                            {formData.tax > 0 && (
-                                                <div className="flex justify-between text-sm">
-                                                    <span>Tax Amount:</span>
-                                                    <span>RM{formData.tax}</span>
+
+                                            {/* Discount */}
+                                            <div className="border-t pt-2">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span className="font-medium">Discount:</span>
+                                                    <select
+                                                        value={formData.discount_type}
+                                                        onChange={(e) => handleDiscountChange(e.target.value, formData.discount_value)}
+                                                        className="w-32 border-gray-300 rounded-md shadow-sm text-sm"
+                                                    >
+                                                        <option value="">No Discount</option>
+                                                        <option value="percentage">Percentage</option>
+                                                        <option value="fixed">Fixed Amount</option>
+                                                    </select>
                                                 </div>
-                                            )}
+                                                {formData.discount_type && (
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-sm">
+                                                            {formData.discount_type === 'percentage' ? 'Percentage:' : 'Amount:'}
+                                                        </span>
+                                                        <div className="flex items-center">
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                step="0.01"
+                                                                value={formData.discount_value}
+                                                                onChange={(e) => handleDiscountChange(formData.discount_type, parseFloat(e.target.value) || 0)}
+                                                                className="w-24 border-gray-300 rounded-md shadow-sm text-sm"
+                                                            />
+                                                            <span className="ml-2 text-sm">{formData.discount_type === 'percentage' ? '%' : 'RM'}</span>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {formData.discount_amount > 0 && (
+                                                    <div className="flex justify-between text-sm text-green-600">
+                                                        <span>Discount Amount:</span>
+                                                        <span>-RM{formData.discount_amount}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Tax */}
+                                            <div className="border-t pt-2">
+                                                <div className="flex justify-between items-center">
+                                                    <span>Tax (%):</span>
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        value={taxRate}
+                                                        onChange={handleTaxChange}
+                                                        className="w-20 border-gray-300 rounded-md shadow-sm text-sm"
+                                                    />
+                                                </div>
+                                                {formData.tax > 0 && (
+                                                    <div className="flex justify-between text-sm">
+                                                        <span>Tax Amount:</span>
+                                                        <span>RM{formData.tax}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Additional Charges */}
+                                            <div className="border-t pt-2">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span>Shipping Charges:</span>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        step="0.01"
+                                                        value={formData.shipping_charges}
+                                                        onChange={(e) => handleChargeChange('shipping_charges', parseFloat(e.target.value) || 0)}
+                                                        className="w-24 border-gray-300 rounded-md shadow-sm text-sm"
+                                                    />
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span>Handling Charges:</span>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        step="0.01"
+                                                        value={formData.handling_charges}
+                                                        onChange={(e) => handleChargeChange('handling_charges', parseFloat(e.target.value) || 0)}
+                                                        className="w-24 border-gray-300 rounded-md shadow-sm text-sm"
+                                                    />
+                                                </div>
+                                            </div>
+
                                             <div className="flex justify-between border-t pt-2">
                                                 <span className="font-bold">Total:</span>
                                                 <span className="font-bold text-lg text-green-600">RM{formData.total}</span>

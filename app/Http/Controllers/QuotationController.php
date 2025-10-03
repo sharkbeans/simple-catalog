@@ -28,7 +28,9 @@ class QuotationController extends Controller
     {
         $validated = $request->validate([
             'customer_name' => 'required|string|max:255',
+            'customer_company' => 'nullable|string|max:255',
             'customer_address' => 'nullable|string',
+            'delivery_address' => 'nullable|string',
             'customer_contact' => 'nullable|string|max:255',
             'customer_email' => 'nullable|email|max:255',
             'valid_from' => 'required|date',
@@ -41,8 +43,15 @@ class QuotationController extends Controller
             'items.*.total' => 'required|numeric|min:0',
             'subtotal' => 'required|numeric|min:0',
             'tax' => 'nullable|numeric|min:0',
+            'discount_type' => 'nullable|string|in:percentage,fixed',
+            'discount_value' => 'nullable|numeric|min:0',
+            'discount_amount' => 'nullable|numeric|min:0',
+            'shipping_charges' => 'nullable|numeric|min:0',
+            'handling_charges' => 'nullable|numeric|min:0',
             'total' => 'required|numeric|min:0',
             'notes' => 'nullable|string',
+            'additional_requirements' => 'nullable|string',
+            'preferred_response_timeline' => 'nullable|string',
         ]);
 
         // Determine status based on user authentication
@@ -105,7 +114,9 @@ class QuotationController extends Controller
 
         $validated = $request->validate([
             'customer_name' => 'required|string|max:255',
+            'customer_company' => 'nullable|string|max:255',
             'customer_address' => 'nullable|string',
+            'delivery_address' => 'nullable|string',
             'customer_contact' => 'nullable|string|max:255',
             'customer_email' => 'nullable|email|max:255',
             'valid_from' => 'required|date',
@@ -118,10 +129,16 @@ class QuotationController extends Controller
             'items.*.total' => 'required|numeric|min:0',
             'subtotal' => 'required|numeric|min:0',
             'tax' => 'nullable|numeric|min:0',
+            'discount_type' => 'nullable|string|in:percentage,fixed',
+            'discount_value' => 'nullable|numeric|min:0',
+            'discount_amount' => 'nullable|numeric|min:0',
+            'shipping_charges' => 'nullable|numeric|min:0',
+            'handling_charges' => 'nullable|numeric|min:0',
             'total' => 'required|numeric|min:0',
             'notes' => 'nullable|string',
             'admin_notes' => 'nullable|string',
-            'status' => 'nullable|string|in:draft,pending,approved,rejected,sent',
+            'status' => 'nullable|string|in:draft,pending,approved,rejected,sent,accepted',
+            'priority' => 'nullable|string|in:low,medium,high,urgent',
         ]);
 
         $quotation->update($validated);
@@ -193,10 +210,18 @@ class QuotationController extends Controller
             return back()->with('error', 'Quotation must be approved before sending.');
         }
 
-        // Generate WhatsApp message URL
+        // Format phone number (remove all non-numeric characters)
         $phone = preg_replace('/[^0-9]/', '', $quotation->customer_contact);
+
+        // If phone doesn't start with country code, assume Malaysia (+60) and add it
+        if (!str_starts_with($phone, '60')) {
+            // Remove leading 0 if present and add 60
+            $phone = '60' . ltrim($phone, '0');
+        }
+
         $quotationUrl = route('quotations.view', $quotation->access_token);
 
+        // Build WhatsApp message (similar format to Cart)
         $message = "Hello {$quotation->customer_name},\n\n";
         $message .= "Your quotation {$quotation->quotation_number} is ready for your review!\n\n";
         $message .= "Total: RM" . number_format($quotation->total, 2) . "\n";
@@ -204,7 +229,9 @@ class QuotationController extends Controller
         $message .= "Please review and approve your quotation here:\n{$quotationUrl}\n\n";
         $message .= "Thank you for your business!";
 
-        $whatsappUrl = "https://wa.me/{$phone}?text=" . urlencode($message);
+        // Encode message for URL (same as Cart)
+        $encodedMessage = urlencode($message);
+        $whatsappUrl = "https://wa.me/{$phone}?text={$encodedMessage}";
 
         // Update status to sent
         $quotation->update(['status' => 'sent']);
@@ -217,7 +244,9 @@ class QuotationController extends Controller
         // Admin updates quotation and sends amendment to customer
         $validated = $request->validate([
             'customer_name' => 'required|string|max:255',
+            'customer_company' => 'nullable|string|max:255',
             'customer_address' => 'nullable|string',
+            'delivery_address' => 'nullable|string',
             'customer_contact' => 'nullable|string|max:255',
             'customer_email' => 'nullable|email|max:255',
             'valid_from' => 'required|date',
@@ -230,6 +259,11 @@ class QuotationController extends Controller
             'items.*.total' => 'required|numeric|min:0',
             'subtotal' => 'required|numeric|min:0',
             'tax' => 'nullable|numeric|min:0',
+            'discount_type' => 'nullable|string|in:percentage,fixed',
+            'discount_value' => 'nullable|numeric|min:0',
+            'discount_amount' => 'nullable|numeric|min:0',
+            'shipping_charges' => 'nullable|numeric|min:0',
+            'handling_charges' => 'nullable|numeric|min:0',
             'total' => 'required|numeric|min:0',
             'notes' => 'nullable|string',
             'admin_notes' => 'nullable|string',
@@ -241,6 +275,11 @@ class QuotationController extends Controller
                 'items' => $quotation->items,
                 'subtotal' => $quotation->subtotal,
                 'tax' => $quotation->tax,
+                'discount_type' => $quotation->discount_type,
+                'discount_value' => $quotation->discount_value,
+                'discount_amount' => $quotation->discount_amount,
+                'shipping_charges' => $quotation->shipping_charges,
+                'handling_charges' => $quotation->handling_charges,
                 'total' => $quotation->total,
             ];
         }
@@ -254,10 +293,18 @@ class QuotationController extends Controller
             'customer_rejection_reason' => null,
         ]));
 
-        // Generate WhatsApp message
+        // Format phone number (same logic as sendViaWhatsApp)
         $phone = preg_replace('/[^0-9]/', '', $quotation->customer_contact);
+
+        // If phone doesn't start with country code, assume Malaysia (+60) and add it
+        if (!str_starts_with($phone, '60')) {
+            // Remove leading 0 if present and add 60
+            $phone = '60' . ltrim($phone, '0');
+        }
+
         $quotationUrl = route('quotations.view', $quotation->access_token);
 
+        // Build WhatsApp message (similar format to Cart)
         $message = "Hello {$quotation->customer_name},\n\n";
         $message .= "We have updated your quotation {$quotation->quotation_number}.\n\n";
         $message .= "Updated Total: RM" . number_format($quotation->total, 2) . "\n";
@@ -265,9 +312,15 @@ class QuotationController extends Controller
         $message .= "Please review the updated quotation and approve or request changes:\n{$quotationUrl}\n\n";
         $message .= "Thank you for your business!";
 
-        $whatsappUrl = "https://wa.me/{$phone}?text=" . urlencode($message);
+        // Encode message for URL (same as Cart)
+        $encodedMessage = urlencode($message);
+        $whatsappUrl = "https://wa.me/{$phone}?text={$encodedMessage}";
 
-        return redirect()->away($whatsappUrl);
+        // Return the WhatsApp URL for Inertia to handle
+        return back()->with([
+            'whatsappUrl' => $whatsappUrl,
+            'success' => 'Quotation updated successfully! Redirecting to WhatsApp...'
+        ]);
     }
 
     public function customerApprove(Quotation $quotation)
